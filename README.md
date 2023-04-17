@@ -10,3 +10,8 @@ conda activate aicup
 ```bash
 pip install -r requirements.in
 ```
+
+## Download Data
+```bash
+bash download.sh
+```
