@@ -27,7 +27,7 @@ def main():
     with open('./cache/train_sentence_concat.json', 'r') as f:
         claim_candidates = json.load(f)
 
-    version = 3
+    version = 5
     # record prompt prefix
     try:
         os.mkdir(f'./cache/response_v{version}')
@@ -35,20 +35,22 @@ def main():
         print('the dir exists')
         exit(1)
 
-    with open(f'./cache/response_v{version}/prefix.json', 'w', encoding='utf-8') as f:
+    with open(f'./cache/response_v{version}/prefix.txt', 'w', encoding='utf-8') as f:
         f.write(prompt_prefix)
     
     # choose candidates
-    id_list = [0, 1, 5, 6, 7]
+    id_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     for i in id_list:
         candidate = claim_candidates[i]
         # concat with the prompt
         user_input = prompt_prefix + f'{candidate}'
-        
+        user_input.replace("candidates", "候選證據文章").replace("claim", "敘述") #not working 
+
         chatbot_response = get_response(user_input)
         chatbot_response.update({'prompt' : user_input})
         with open(f'./cache/response_v{version}/response{i}.json', 'w') as f:
             json.dump(chatbot_response, f, indent=2, ensure_ascii=False)
         print(f'finished generated response of training data_{i}')
 
-main()
+if __name__ == '__main__':
+    main()
