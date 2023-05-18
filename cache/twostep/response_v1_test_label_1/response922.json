@@ -1,0 +1,36 @@
+[
+  {
+    "id": "chatcmpl-7FCjyXt6afn2BwWrQPU5jk2q0ZMTP",
+    "object": "chat.completion",
+    "created": 1683858250,
+    "model": "gpt-3.5-turbo-0301",
+    "usage": {
+      "prompt_tokens": 3433,
+      "completion_tokens": 16,
+      "total_tokens": 3449
+    },
+    "choices": [
+      {
+        "message": {
+          "role": "assistant",
+          "content": "敘述驗證結果：錯誤。"
+        },
+        "finish_reason": "stop",
+        "index": 0
+      }
+    ],
+    "label": "refutes",
+    "evidence": [
+      [
+        [
+          6064,
+          5922,
+          "奧克蘭市",
+          78
+        ]
+      ]
+    ],
+    "prompt": "你是驗證敘述真偽的好幫手，給你一個敘述與資料，資料中有數篇文章，一篇文章有篇名及內容。請依照給你的資料，檢查敘述為「正確」、「錯誤」或「資訊不足」。請參考[例題]中答案的回答形式，將[題目]中敘述的驗證結果填入答案欄空格中。\n\n[例題]\n敘述：收入豐厚的湯姆克魯斯獲得了許多獎項。\n資料：\n篇名：湯姆·漢克斯\n內容：托馬斯·傑弗裏·漢克斯（ThomasJeffreyHanks)，暱稱湯姆·漢克（TomHanks），美國男演員及電視製片人，以演技精湛而著稱。他是歷史上繼史賓塞·屈賽之後的第2位連續兩屆獲得奧斯卡金像獎最佳男主角獎的演員，亦是最年輕獲得美國電影學會終身成就獎的演員。\n\n篇名：湯姆·克魯斯\n內容：湯姆·克魯斯（TomCruise)全名湯瑪斯·克魯斯·馬波瑟四世（ThomasCruiseMapotherIV），是知名美國籍男演員及電影製片人。作爲世界上收入最多的演員之一，他獲得了多項榮譽，包含三次金球獎和榮譽金棕櫚獎，以及三次奧斯卡金像獎和英國電影學院獎提名。他的電影在北美擁有超過45億票房，在全球擁有超過110億美元票房，使他成爲有史以來票房最高的巨星。而他主演的電影共有19次位列全球年度票房前十，爲歷史第一。克魯斯於1980年代開始他的演藝生涯，並在喜劇片《保送入學》（1983）和動作片《壯志凌雲》（1986）中取得突破。\n\n答案：\n敘述驗證結果：正確。\n\n[題目]\n敘述：被稱爲「帆之都」的紐西蘭的都會區奧克蘭市是紐西蘭人囗最多的城市，位在紐西蘭的南島。\n資料：\n\t篇名：城市\n\t內容：-{城市、都市、城、市或都}-，是指人口較爲稠密、工商業較爲發達的地區，一般包括了住宅區、工業區和商業區等機能分區，並且具備行政管轄功能。城市中有樓房、街道和公園等基礎建設。\n\t篇名：南島_(新西蘭)\n\t內容：南島（英語：SouthIsland；毛利語：TeWaiPounamu）是組成紐西蘭的主要兩個海島之一，與北島被庫克海峽隔斷。新西蘭首都惠靈頓即在南島對岸，福沃海峽在南面，使之與斯圖爾特島分開。西面爲塔斯曼海，東面爲南太平洋。該島的毛利語名字爲「特瓦普納姆（TeWaipounamu）」，意指「綠石之水」。全島面積58,093平方英哩，略大於北島，是世界第十二大的海島。西部由一系列東北-西南走向的山脈構成，這些山脈縱貫本島，南島西海岸南部的南阿爾卑斯山脈（SouthernAlps）是紐西蘭的最大山區；其中以航海家庫克船長命名的主峯庫克山（毛利語：Aoraki/英語：MtCook）海拔3,754米，是紐西蘭的最高峯。南島的經濟遜於北島。主要城市有基督城、丹尼丁。\n\t篇名：奧克蘭\n\t內容：Infoboxsettlement|name=奧克蘭|other_name=|native_name=Auckland（英語）TāmakiMakaurau（毛利語）|official_name=|nickname=帆之都|settlement_type=都會區|total_type=領地|motto=|image_skyline=|image_caption=從上依序，從左到右：中央商務區、奧克蘭海灣大橋、阿爾伯特公園、懷希基島棕櫚灘、奧克蘭戰爭紀念博物館、聖巴德利爵主教座堂_|image_flag=FlagofAuckland.svg|flag_size=|image_seal=AucklandCOA.png|seal_size=|image_shield=|shield_size=|image_blank_emblem=|blank_emblem_type=|blank_emblem_size=|image_map=|mapsize=240px|map_caption=|image_map1=|mapsize1=|map_caption1=|image_dot_map=|dot_mapsize=|dot_map_caption=|dot_x=|dot_y=|pushpin_map=NewZealand|pushpin_label_position=|pushpin_map_caption=|pushpin_mapsize=|coordinates_region=|subdivision_type=國家|subdivision_name=|subdivision_type1=島嶼|subdivision_name1=北島|subdivision_type2=地區|subdivision_name2=奧克蘭|subdivision_type3=行政區劃|subdivision_name3=奧克蘭|parts_type=區劃邊界|p1=HibiscusandBays|p2=UpperHarbour|p3=Kaipatiki|p4=Devonport-Takapuna|p5=WaitakereRanges|p6=Henderson-Massey|p7=Whau|p8=Albert-Eden|p9=Puketapapa|p10=Waitemata|p11=Orakei|p12=Maungakiekie-Tamaki|p13=Mangere-Otahuhu|p14=Otara-Papatoetoe|p15=Howick|p16=Manurewa|p17=Papakura|government_footnotes=|government_type=|leader_title1=市長|leader_name1=萊恩布朗|area_magnitude=|unit_pref=|area_footnotes=|area_urban_km2=1086|area_total_km2=5600|area_land_km2=|area_water_km2=|area_total_sq_mi=|area_land_sq_mi=|area_water_sq_mi=|area_water_percent=|elevation_footnotes=|elevation_m=|elevation_ft=|elevation_max_m=196|elevation_max_ft=Averagerainfall1,210.7mm|elevation_min_m=0|elevation_min_ft=|population_as_of=2013年6月估計|population_footnotes=|population_note=|population_total=1462000|population_density_km2=auto|population_urban=1,418,000|population_density_urban_km2=auto|population_blank2_title=|population_blank2=|timezone=紐西蘭標準時間|utc_offset=+12|timezone_DST=紐西蘭日光節約時間|utc_offset_DST=+13|coor_type=|latd=|latm=|lats=|latNS=|longd=|longm=|longs=|longEW=|coordinates_display=|postal_code_type=郵遞區號|postal_code=0500-2999|area_code=09|website=奧克蘭（Auckland；TāmakiMakaurau或Ākarana），老華僑譯作屋侖，是新西蘭的一個都會區，位於南太平洋南緯37度，爲紐西蘭人囗最多的城市，也是北島最大的城市。人口約150萬，聚居了全國約32％的人口，也是世界上波利尼西亞人最多的城市。奧克蘭被稱爲“帆之都”，同時也是新西蘭工業和商業中心。新西蘭的首都早先設在奧克蘭，後來於1865年遷至北島南端的惠靈頓。現今的奧克蘭仍然爲新西蘭最發達的地區之一，同時也是南太平洋的樞紐，旅客出入境的主要地點。在2014年的世界最佳居住城市評選中，奧克蘭高居全球第三位。在2021年的世界最佳居住城市評選中，奧克蘭排名全球榜首。奧克蘭因其在商業，藝術和教育方面的重要性而被GaWC歸類爲Beta+世界城市。\n\t篇名：帆\n\t內容：帆，或稱颿、風帆或船帆，是指帆船桅杆上利用風力的布篷。而使用風帆作爲動力的船隻則稱爲帆船。帆船可能不止一面船帆，船帆也並非僅僅順風時纔可以推進船隻。通過船帆角度的變換，在逆風中帆船也可前進。\n\t篇名：奧克蘭市\n\t內容：Infoboxsettlement|name=奧克蘭市AucklandCity|settlement_type=前紐西蘭二級行政區劃|total_type=Total|image_shield=AucklandCOA.png|shield_size=150px|image_map=AucklandTerritorialAuthority.PNG|mapsize=200px|map_caption=奧克蘭市在北島的位置|image_map1=NZ-AucklandCity.png|mapsize1=200px|map_caption1=奧克蘭市的市區（橙色）位於大奧克蘭（灰色）之內|subdivision_type=國家|subdivision_name=|subdivision_type1=區劃|subdivision_name1=奧克蘭大區|established_title1=建立|established_date1=1871年|established_title2=最終範圍形成|established_date2=1989年|extinct_title=廢除|extinct_date=2010年11月1日|seat=|leader_title=Mayor|leader_name=|area_total_km2=637|population_as_of=2010年6月30日|population_footnotes=|population_total=|population_density_km2=auto|population_urban=|timezone=NZST|utc_offset=+12|timezone_DST=NZDT|utc_offset_DST=+13|postal_code_type=Postcode(s)|postal_code=|area_code=09|website=奧克蘭市（AucklandCity）是紐西蘭北島大奧克蘭大都市地區當中的一個主要城市，位於奧克蘭地峽上。它周遭的城市還有北岸市、懷塔卡瑞市和曼努考市。上一任奧克蘭市長是約翰·班克斯。\n答案：\n\t敘述驗證結果：＿＿＿。\n",
+    "prompt_len": 4438
+  }
+]

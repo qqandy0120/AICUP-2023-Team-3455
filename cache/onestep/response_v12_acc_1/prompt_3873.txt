@@ -1,0 +1,33 @@
+你是驗證敘述真偽的程式，給你一個敘述與資料，資料中有數篇文章，一篇文章有篇名及內容，內容每句前有編號，[1]代表第一句，[2]代表第二句，以此類推。
+請只考慮給你的資料，檢查敘述為「正確」、「錯誤」或「資訊不足」，若為正確或錯誤，請由文章中選出支持你論點的證據句，證據句可由多個證據組成；若為資訊不足，證據欄請留空即可。
+請參考[例題]回答形式，將[題目]的答案填入答案欄空格中，。
+[例題]
+敘述：收入豐厚的湯姆克魯斯獲得了許多獎項。
+資料：
+篇名：湯姆·漢克斯
+內容：[0]托馬斯·傑弗裏·漢克斯（ThomasJeffreyHanks)，暱稱湯姆·漢克（TomHanks），美國男演員及電視製片人，以演技精湛而著稱。[1]他是歷史上繼史賓塞·屈賽之後的第2位連續兩屆獲得奧斯卡金像獎最佳男主角獎的演員，亦是最年輕獲得美國電影學會終身成就獎的演員。
+
+篇名：湯姆·克魯斯
+內容：[0]湯姆·克魯斯（TomCruise)全名湯瑪斯·克魯斯·馬波瑟四世（ThomasCruiseMapotherIV），是知名美國籍男演員及電影製片人。[1]作爲世界上收入最多的演員之一，他獲得了多項榮譽，包含三次金球獎和榮譽金棕櫚獎，以及三次奧斯卡金像獎和英國電影學院獎提名。[2]他的電影在北美擁有超過45億票房，在全球擁有超過110億美元票房，使他成爲有史以來票房最高的巨星。[3]而他主演的電影共有19次位列全球年度票房前十，爲歷史第一。[6]克魯斯於1980年代開始他的演藝生涯，並在喜劇片《保送入學》（1983）和動作片《壯志凌雲》（1986）中取得突破。
+
+答案：
+敘述：正確。
+證據：湯姆·克魯斯，第1、2句。
+
+[題目]
+敘述：在蘇格蘭首府愛丁堡市，併成立於1583年的公立研究型大學愛丁堡大學是英語世界最古老的市立機構。
+資料：
+	篇名：愛丁堡
+	內容：[0]Infoboxsettlement[3]|name=愛丁堡市[5]|native_name=Edinburgh[7]|other_name=DùnÈideann[9]|settlement_type=市[11]|official_name=CityofEdinburgh[14]|image_skyline=[16]|image_caption=從上方依序爲愛丁堡的天際線、遠處的愛丁堡城堡、司各特紀念塔、卡爾頓山、蘇格蘭國家畫廊、蘇格蘭議會大廈、亞瑟廳[18]|nickname=AuldReeki、Edina、AthensoftheNorth[20]|image_shield=Edinburgh-coa.png[22]|image_flag=FlagofEdinburgh.svg[25]|image_map=City_of_Edinburgh_in_Scotland.[26]svg[28]|map_caption=在蘇格蘭的位置[30]|coordinates_display=inline,title[32]|coordinates_region=GB[34]|latd=55|latm=57|lats=11|latNS=N[36]|longd=3|longm=11|longs=20|longEW=W[39]|subdivision_type=國家[41]|subdivision_name=[43]|subdivision_type1=構成國[45]|subdivision_name1=[47]|subdivision_type2=議會區[49]|subdivision_name2=愛丁堡市[51]|subdivision_type3=中尉區[53]|subdivision_name3=愛丁堡市[56]|established_title=成立時間[58]|established_date=早於公元七世紀[60]|established_title2=城鎮憲章[62]|established_date2=1125年[64]|established_title3=城市地位[66]|established_date3=1889年[69]|leader_title=管理部門[71]|leader_name=愛丁堡市議會[73]|leader_title1=LordProvost[75]|leader_name1=DonaldWilson[77]|leader_title2=MSPs[79]|leader_name2=[81]|leader_title3=MPs[83]|leader_name3=[86]|area_total_km2=264[88]|area_urban_km2=[90]|area_metro_km2=[93]|population_as_of=2013[95]|population_total=487,500[97]|population_urban=817,800[99]|population_density_km2=1828[101]|population_blank1_title=語言[103]|population_blank1=低地蘇格蘭語、英語[105]|population_footnotes=[108]|timezone=GMT[110]|utc_offset=±0[112]|timezone_DST=BST[114]|utc_offset_DST=+1[117]|elevation_m=47[119]|elevation_footnotes=[122]|postal_code_type=郵編[124]|postal_code=EH[126]|area_code=0131[128]|blank_name=ISO3166-2[130]|blank_info=GB-EDH[132]|blank1_name=ONS編碼[134]|blank1_info=00QP[136]|blank2_name=OS格網參考[138]|blank2_info=[140]|blank3_name=NUTS3[142]|blank3_info=UKM25[144]|blank4_name=[146]|blank4_info=[149]|website=[152]愛丁堡市（Edinburgh，-LSB-ˈɛdɪnbərə-RSB-、DùnÈideann），是英國蘇格蘭的首府，也是繼格拉斯哥後蘇格蘭的第二大城市，位於蘇格蘭東海岸福斯灣南岸。[153]2013年全市人口爲487,500。[156]自15世紀以來愛丁堡就被當做蘇格蘭首府，但在1603年和1707年政治力量多次南移到倫敦，直至1999年蘇格蘭議會的自治權利才得以確立。[157]蘇格蘭國家博物館、蘇格蘭國家圖書館和蘇格蘭國家畫廊等重要文化機構也位於愛丁堡。[158]在經濟上，現在的愛丁堡主要依靠金融業，是倫敦以外英國最大的金融中心。[161]愛丁堡有著悠久的歷史，許多歷史建築亦完好保存下來。[162]愛丁堡城堡、荷里路德宮、聖吉爾斯大教堂等名勝都位於此地。[163]愛丁堡的舊城和新城一起被聯合國教科文組織列爲世界遺產。[164]2004年愛丁堡成爲世界第一座文學之城。[165]愛丁堡的教育也很發達，英國最古老的大學之一愛丁堡大學就坐落於此，爲一所歷史超過四百年的世界頂尖名校。[166]再加上愛丁堡國際藝術節等文化活動，愛丁堡成爲了英國僅次於倫敦的第二大旅遊城市。
+	篇名：研究型大學
+	內容：[0]研究型大學是以學術研究爲主要辦學目的的大學，相對的是教學型大學和。[1]研究型大學可以是公立的或私立的，並且通常具有知名的品牌名稱。[2]許多研究型大學的本科課程通常是學術性的，而不是職業性的，可能無法爲特定的職業提供人才，但是許多僱主重視研究型大學的學位，因爲他們教授諸如批判性思維等基本技能。[3]在全球範圍內，研究型大學主要是公立大學，但美國和日本除外。[6]非屬研究型大學的高等教育機構（或不希望獲得該稱號的大學，例如文理學院）反而更加註重學生的教學或第三期教育的其他方面，其教職員工“發表或滅亡”的壓力較小。
+	篇名：蘇格蘭
+	內容：[0]InfoboxcountryUK[2]|conventional_long_name=蘇格蘭[4]|native_name=[6]|common_name=Scotland[8]|image_flag=FlagofScotland.svg[10]|image_coat=RoyalCoatofArmsoftheKingdomofScotland.svg[12]|symbol_width=100px[14]|symbol_type=蘇格蘭皇家徽章[16]|national_motto=“主爲我的防禦而辯護”a[18]|national_anthem=多首b常爲《蘇格蘭之花》[20]|status=構成國和司法管轄區[22]|capital=愛丁堡[24]|largest_city=格拉斯哥[26]|languages_type=[28]|languages=英語[30]|languages2_type=認可語言c[32]|languages2=[35]|languages2_sub=yes[37]|ethnic_groups=[40]|ethnic_groups_year=2011[42]|·government_type=中央放權的議會制君主立憲制[44]|monarch=查爾斯三世[46]|first_minister=妮古拉·斯特金[48]|legislature=蘇格蘭議會[50]|sovereignty_type=建立[52]|established_event1=[54]|established_date1=9世紀（傳統稱843年）[56]|established_event2=與英格蘭合併[58]|established_date2=1707年5月1日[60]|established_event3=權力下放[62]|established_date3=1998年11月19日[64]|area_rank=[66]|area_magnitude=1E10[68]|area_km2=77933[70]|area_footnote=[72]|area_label=陸地[74]|percent_water=[76]|population_rank=[78]|population_estimate=5,424,800[80]|population_estimate_year=2017[82]|population_census=5,313,600[84]|population_census_year=2011[86]|population_density_km2=67.5[88]|population_density_rank=[90]|GDP_PPP=|GDP_PPP_rank=|GDP_PPP_year=|GDP_PPP_per_capita=|GDP_PPP_per_capita_rank=[92]|GDP_nominal=$2,452.67億（包括北海石油及天然氣收入）[94]|GDP_nominal_rank=[96]|GDP_nominal_year=2013[98]|GDP_nominal_per_capita=$45,904[100]|GDP_nominal_per_capita_rank=[102]|Gini_year=|Gini_change=|Gini=|Gini_ref=|Gini_rank=[104]|HDI_year=|HDI_change=|HDI=|HDI_ref=|HDI_rank=[106]|cctld=.[107]scote[109]|official_website=[112]蘇格蘭（英語、低地蘇格蘭語：Scotland，-LSB-ˈskɒt.lənd-RSB-；Alba）爲英國的構成國之一，位於大不列顛島北部，英格蘭之北，被大西洋環繞包圍，東部濱臨北海，西南濱臨北海海峽和愛爾蘭海，由約790多個島嶼組成。[113]以格子花紋、風笛音樂、畜牧業與威士忌而聞名。[114]雖然外交、軍事、金融、總體經濟政策等事務上受英國政府及英國國會管轄，但蘇格蘭對於內部的立法、行政上，擁有高度自治，在英國內規模僅次於英格蘭。
+	篇名：1583年
+	內容：
+	篇名：首府
+	內容：[0]首府（舊稱首邑）是一種地理概念，中文一般指地方政府的行政中心，特別是享有高度自治權利的地方政府駐地。
+答案：
+	敘述：＿＿＿。
+	證據：＿＿＿。
+

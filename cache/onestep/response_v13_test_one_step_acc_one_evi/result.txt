@@ -1,0 +1,67 @@
+[output]:
+label: refutes
+evidence: [[['鄧小平理論', 8]]]
+[Validation] correct[Validation] not matching any evidences!:([output]:
+label: supports
+evidence: [[['臺南避病院', 1]]]
+[Validation] not matching any evidences!:(*****
+[ans]
+label: ['supports']
+[Validation] Label wrong!*****
+[ans]
+label: ['NOT ENOUGH INFO']
+[Validation] Label wrong!*****
+[ans]
+label: ['supports']
+[Validation] Label wrong![output]:
+label: refutes
+evidence: []
+[Validation] not matching any evidences!:([output]:
+label: supports
+evidence: [[['幻燈片篇', 4]], [['訊息篇', 1]], [['幻燈片篇', 4], ['訊息篇', 1]], [['訊息篇', 1], ['幻燈片篇', 4]]]
+[Validation] not matching any evidences!:([output]:
+label: refutes
+evidence: []
+[Validation] not matching any evidences!:([output]:
+label: supports
+evidence: [[['臺灣總督', 0]], [['臺灣總督', 1]], [['臺灣總督', 0], ['臺灣總督', 1]], [['臺灣總督', 1], ['臺灣總督', 0]]]
+[Validation] correct[Validation] not matching any evidences!:([output]:
+label: supports
+evidence: [[['《春秋_(書)》', 2]], [['《春秋_(書)》', 6]], [['《穀梁傳》', 0]], [['《穀梁傳》', 1]], [['《春秋_(書)》', 2], ['《春秋_(書)》', 6]]]
+[Validation] not matching any evidences!:([output]:
+label: supports
+evidence: [[['臺北市政府捷運工程局', 1]]]
+[Validation] correct[Validation] not matching any evidences!:([output]:
+label: refutes
+evidence: []
+[Validation] not matching any evidences!:(*****
+[ans]
+label: ['supports']
+[Validation] Label wrong![output]:
+label: supports
+evidence: [[['造紙術', 1]], [['造紙術', 4]], [['造紙術', 6]], [['中國', 0]], [['中國', 4]]]
+[Validation] correct[Validation] not matching any evidences!:(*****
+[ans]
+label: ['supports']
+[Validation] Label wrong!*****
+[ans]
+label: ['supports']
+[Validation] Label wrong![output]:
+label: supports
+evidence: []
+[Validation] not matching any evidences!:(*****
+[ans]
+label: ['supports', 'supports']
+[Validation] Label wrong!*****
+[ans]
+label: ['NOT ENOUGH INFO']
+[Validation] Label wrong![output]:
+label: refutes
+evidence: []
+[Validation] not matching any evidences!:([output]:
+label: refutes
+evidence: []
+[Validation] not matching any evidences!:(*****
+[ans]
+label: ['supports']
+[Validation] Label wrong!
