@@ -2,7 +2,6 @@ import pandas as pd
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from typing import Dict, List, Set, Tuple, Union
-from dataset import BERTDataset, Dataset
 import torch
 
 LABEL2ID: Dict[str, int] = {
