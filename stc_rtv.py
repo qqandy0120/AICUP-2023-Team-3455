@@ -20,7 +20,6 @@ from transformers import (
     AutoTokenizer,
     get_scheduler,
 )
-
 from dataset import SentRetrievalBERTDataset
 
 # local libs
@@ -32,7 +31,7 @@ from utils import (
     save_checkpoint,
     set_lr_scheduler,
 )
-
+from argparse import ArgumentParser, Namespace
 
 def evidence_macro_precision(
     instance: Dict,
@@ -323,35 +322,28 @@ def pair_with_wiki_sentences_eval(
     })
 
 
+def main(args):
 
-
-pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
-
-SEED = 42
-
-TRAIN_DATA = load_json("data/public_train.jsonl")
-TEST_DATA = load_json("data/public_test.jsonl")
-DOC_DATA = load_json("data/train_doc5.jsonl")
-
-LABEL2ID: Dict[str, int] = {
-    "supports": 0,
-    "refutes": 1,
-    "NOT ENOUGH INFO": 2,
-}
-ID2LABEL: Dict[int, str] = {v: k for k, v in LABEL2ID.items()}
-
-_y = [LABEL2ID[data["label"]] for data in TRAIN_DATA]
-# GT means Ground Truth
-TRAIN_GT, DEV_GT = train_test_split(
-    DOC_DATA,
-    test_size=0.2,
-    random_state=SEED,
-    shuffle=True,
-    stratify=_y,
-)
-
-
-if __name__ == '__main__':
+    pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
+    SEED = 42
+    TRAIN_DATA = load_json(args.train_data)
+    TEST_DATA = load_json(args.test_data)
+    DOC_DATA = load_json(args.train_doc_data)
+    LABEL2ID: Dict[str, int] = {
+        "supports": 0,
+        "refutes": 1,
+        "NOT ENOUGH INFO": 2,
+    }
+    ID2LABEL: Dict[int, str] = {v: k for k, v in LABEL2ID.items()}
+    _y = [LABEL2ID[data["label"]] for data in TRAIN_DATA]
+    # GT means Ground Truth
+    TRAIN_GT, DEV_GT = train_test_split(
+        DOC_DATA,
+        test_size=0.2,
+        random_state=SEED,
+        shuffle=True,
+        stratify=_y,
+    )
 
     # preload wiki database
     print('Preloading wiki database...')
@@ -362,14 +354,14 @@ if __name__ == '__main__':
 
     # Step 1. Setup training environment
     #@title  { display-mode: "form" }
-    MODEL_NAME = "bert-base-chinese"  #@param {type:"string"}
-    NUM_EPOCHS = 1  #@param {type:"integer"}
-    LR = 2e-5  #@param {type:"number"}
-    TRAIN_BATCH_SIZE = 64  #@param {type:"integer"}
-    TEST_BATCH_SIZE = 256  #@param {type:"integer"}
-    NEGATIVE_RATIO = 0.03  #@param {type:"number"}
-    VALIDATION_STEP = 50  #@param {type:"integer"}
-    TOP_N = 5  #@param {type:"integer"}
+    MODEL_NAME = args.model_name  #@param {type:"string"}
+    NUM_EPOCHS = args.num_epoch  #@param {type:"integer"}
+    LR = args.lr  #@param {type:"number"}
+    TRAIN_BATCH_SIZE = args.train_batch_size  #@param {type:"integer"}
+    TEST_BATCH_SIZE = args.test_batch_size #@param {type:"integer"}
+    NEGATIVE_RATIO = args.neg_ratio  #@param {type:"number"}
+    VALIDATION_STEP = args.validation_step  #@param {type:"integer"}
+    TOP_N = args.top_n  #@param {type:"integer"}
 
     EXP_DIR = f"sent_retrieval/e{NUM_EPOCHS}_bs{TRAIN_BATCH_SIZE}_" + f"{LR}_neg{NEGATIVE_RATIO}_top{TOP_N}"
     LOG_DIR = "logs/" + EXP_DIR
@@ -388,28 +380,25 @@ if __name__ == '__main__':
         NEGATIVE_RATIO,
     )
     counts = train_df["label"].value_counts()
-    print("Now using the following train data with 0 (Negative) and 1 (Positive)")
+    print("[INFO] Now using the following train data with 0 (Negative) and 1 (Positive)")
     print(counts)
 
     dev_evidences = pair_with_wiki_sentences_eval(mapping, pd.DataFrame(DEV_GT))
-
-    # Step 3. Start training
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-
     train_dataset = SentRetrievalBERTDataset(train_df, tokenizer=tokenizer)
     val_dataset = SentRetrievalBERTDataset(dev_evidences, tokenizer=tokenizer)
 
     train_dataloader = DataLoader(
         train_dataset,
         shuffle=True,
-        batch_size=TRAIN_BATCH_SIZE,
+         batch_size=TRAIN_BATCH_SIZE,
     )
     eval_dataloader = DataLoader(val_dataset, batch_size=TEST_BATCH_SIZE)
 
     del train_df
-
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
-        "cpu")
+    
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    print(f'[INFO] using device {device}')
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
     model.to(device)
 
@@ -417,108 +406,217 @@ if __name__ == '__main__':
     num_training_steps = NUM_EPOCHS * len(train_dataloader)
     lr_scheduler = set_lr_scheduler(optimizer, num_training_steps)
 
-    writer = SummaryWriter(LOG_DIR)
 
-    progress_bar = tqdm(range(num_training_steps))
-    current_steps = 0
 
-    for epoch in range(NUM_EPOCHS):
-        model.train()
+    # Step 3. Start training
+    if args.do_train == 1:
+        print('[INFO] running training section')
+        writer = SummaryWriter(LOG_DIR)
+        progress_bar = tqdm(range(num_training_steps))
+        current_steps = 0
 
-        for batch in train_dataloader:
-            batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**batch)
-            loss = outputs.loss
-            loss.backward()
+        for epoch in range(NUM_EPOCHS):
+            model.train()
 
-            optimizer.step()
-            lr_scheduler.step()
-            optimizer.zero_grad()
-            progress_bar.update(1)
-            writer.add_scalar("training_loss", loss.item(), current_steps)
+            for batch in train_dataloader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                outputs = model(**batch)
+                loss = outputs.loss
+                loss.backward()
 
-            y_pred = torch.argmax(outputs.logits, dim=1).tolist()
-            y_true = batch["labels"].tolist()
+                optimizer.step()
+                lr_scheduler.step()
+                optimizer.zero_grad()
+                progress_bar.update(1)
+                writer.add_scalar("training_loss", loss.item(), current_steps)
 
-            current_steps += 1
+                y_pred = torch.argmax(outputs.logits, dim=1).tolist()
+                y_true = batch["labels"].tolist()
 
-            if current_steps % VALIDATION_STEP == 0 and current_steps > 0:
-                print("Start validation")
-                probs = get_predicted_probs(model, eval_dataloader, device)
+                current_steps += 1
 
-                val_results = evaluate_retrieval(
-                    probs=probs,
-                    df_evidences=dev_evidences,
-                    ground_truths=DEV_GT,
-                    top_n=TOP_N,
-                )
-                print(val_results)
+                if current_steps % VALIDATION_STEP == 0 and current_steps > 0:
+                    print("[INFO] Training: Start validation")
+                    probs = get_predicted_probs(model, eval_dataloader, device)
 
-                # log each metric separately to TensorBoard
-                for metric_name, metric_value in val_results.items():
-                    writer.add_scalar(
-                        f"dev_{metric_name}",
-                        metric_value,
-                        current_steps,
+                    val_results = evaluate_retrieval(
+                        probs=probs,
+                        df_evidences=dev_evidences,
+                        ground_truths=DEV_GT,
+                        top_n=TOP_N,
                     )
+                    print(val_results)
 
-                save_checkpoint(model, CKPT_DIR, current_steps)
+                    # log each metric separately to TensorBoard
+                    for metric_name, metric_value in val_results.items():
+                        writer.add_scalar(
+                            f"dev_{metric_name}",
+                            metric_value,
+                            current_steps,
+                        )
 
-    print("Finished training!")
+                    save_checkpoint(model, CKPT_DIR, current_steps)
 
-    # validation part
-    ckpt_name = "model.50.pt"  #@param {type:"string"}
-    model = load_model(model, ckpt_name, CKPT_DIR)
-    print("Start final evaluations and write prediction files.")
+        print("[INFO] Finished training!")
 
-    train_evidences = pair_with_wiki_sentences_eval(
-        mapping=mapping,
-        df=pd.DataFrame(TRAIN_GT),
+    if args.do_validate == 1:
+        # validation part
+        ckpt_name = "model.50.pt"  #@param {type:"string"}
+        print(f'[INFO] loading ckpt from {CKPT_DIR}/ckpt_name')
+        model = load_model(model, ckpt_name, CKPT_DIR)
+        print("[INFO] Start final evaluations and write prediction files.")
+        if args.do_train == 1:
+            train_evidences = pair_with_wiki_sentences_eval(
+                mapping=mapping,
+                df=pd.DataFrame(TRAIN_GT),
+            )
+            train_set = SentRetrievalBERTDataset(train_evidences, tokenizer)
+            train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
+
+            print("[INFO] Start calculating training scores")
+            probs = get_predicted_probs(model, train_dataloader, device)
+            train_results = evaluate_retrieval(
+                probs=probs,
+                df_evidences=train_evidences,
+                ground_truths=TRAIN_GT,
+                top_n=TOP_N,
+                save_name=f"train_doc5sent{TOP_N}.jsonl",
+            )
+            print(f"[INFO] Training scores => {train_results}")
+
+            print("[INFO] Start validation")
+            probs = get_predicted_probs(model, eval_dataloader, device)
+            val_results = evaluate_retrieval(
+                probs=probs,
+                df_evidences=dev_evidences,
+                ground_truths=DEV_GT,
+                top_n=TOP_N,
+                save_name=f"dev_doc5sent{TOP_N}.jsonl",
+            )
+            print(f"[INFO] Validation scores => {val_results}")
+
+
+        # Step 4. Check on our test data
+        test_data = load_json(args.test_doc_data)
+
+        test_evidences = pair_with_wiki_sentences_eval(
+            mapping,
+            pd.DataFrame(test_data),
+            is_testset=True,
+        )
+        test_set = SentRetrievalBERTDataset(test_evidences, tokenizer)
+        test_dataloader = DataLoader(test_set, batch_size=TEST_BATCH_SIZE)
+
+        print("[INFO] Start predicting the test data")
+        probs = get_predicted_probs(model, test_dataloader, device)
+        evaluate_retrieval(
+            probs=probs,
+            df_evidences=test_evidences,
+            ground_truths=test_data,
+            top_n=TOP_N,
+            cal_scores=False,
+            save_name=f"test_doc5sent{TOP_N}.jsonl",
+        )
+
+def parse_args() -> Namespace:
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--train_data",
+        type=Path,
+        help="path to pulic train data",
+        default="data/public_train.jsonl",
     )
-    train_set = SentRetrievalBERTDataset(train_evidences, tokenizer)
-    train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
-
-    print("Start calculating training scores")
-    probs = get_predicted_probs(model, train_dataloader, device)
-    train_results = evaluate_retrieval(
-        probs=probs,
-        df_evidences=train_evidences,
-        ground_truths=TRAIN_GT,
-        top_n=TOP_N,
-        save_name=f"train_doc5sent{TOP_N}.jsonl",
+    parser.add_argument(
+        "--train_doc_data",
+        type=Path,
+        help="path to pulic train data",
+        default="data/train_doc5.jsonl",
     )
-    print(f"Training scores => {train_results}")
-
-    print("Start validation")
-    probs = get_predicted_probs(model, eval_dataloader, device)
-    val_results = evaluate_retrieval(
-        probs=probs,
-        df_evidences=dev_evidences,
-        ground_truths=DEV_GT,
-        top_n=TOP_N,
-        save_name=f"dev_doc5sent{TOP_N}.jsonl",
+    parser.add_argument(
+        "--test_data",
+        type=Path,
+        help="path to public test data",
+        default="data/public_test.jsonl"
     )
-
-    print(f"Validation scores => {val_results}")
-
-    # Step 4. Check on our test data
-    test_data = load_json("data/test_doc5.jsonl")
-
-    test_evidences = pair_with_wiki_sentences_eval(
-        mapping,
-        pd.DataFrame(test_data),
-        is_testset=True,
+    parser.add_argument(
+        "--test_doc_data",
+        type=Path,
+        help = 'path to doc retrieve test data',
+        default='data/test_doc5.jsonl'
     )
-    test_set = SentRetrievalBERTDataset(test_evidences, tokenizer)
-    test_dataloader = DataLoader(test_set, batch_size=TEST_BATCH_SIZE)
-
-    print("Start predicting the test data")
-    probs = get_predicted_probs(model, test_dataloader, device)
-    evaluate_retrieval(
-        probs=probs,
-        df_evidences=test_evidences,
-        ground_truths=test_data,
-        top_n=TOP_N,
-        cal_scores=False,
-        save_name=f"test_doc5sent{TOP_N}.jsonl",
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        help="pretrained model name",
+        default="bert-base-chinese"
     )
+    parser.add_argument(
+        "--num_epoch",
+        type=int,
+        help="number epoch",
+        default=1
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        help="learning rate",
+        default=2e-5
+    )
+    parser.add_argument(
+        "--train_batch_size",
+        type=int,
+        help="training batch size",
+        default=64
+    )
+    parser.add_argument(
+        "--test_batch_size",
+        type=int,
+        help="testing batch size",
+        default=256
+    )
+    parser.add_argument(
+        "--neg_ratio",
+        type=float,
+        help="negative ratio",
+        default=0.03
+    )
+    parser.add_argument(
+        "--validation_step",
+        type=int,
+        help="validation step",
+        default=50
+    )
+    parser.add_argument(
+        "--top_n",
+        type=int,
+        help="choose top n evi",
+        default=5
+    )
+    parser.add_argument(
+        "-do_validate",
+        type=int,
+        help="whether to do validation part",
+        default=1
+    )
+    parser.add_argument(
+        "--do_train",
+        type = int,
+        help="whether to do training part",
+        default=1
+    )
+    args = parser.parse_args()
+    return args
+
+# model parameter
+# MODEL_NAME = "bert-base-chinese"  #@param {type:"string"}
+# NUM_EPOCHS = 1  #@param {type:"integer"}
+# LR = 2e-5  #@param {type:"number"}
+# TRAIN_BATCH_SIZE = 64  #@param {type:"integer"}
+# TEST_BATCH_SIZE = 256  #@param {type:"integer"}
+# NEGATIVE_RATIO = 0.03  #@param {type:"number"}
+# VALIDATION_STEP = 50  #@param {type:"integer"}
+# TOP_N = 5  #@param {type:"integer"}
+
+if __name__ == '__main__':
+    args = parse_args()
+    main(args)
