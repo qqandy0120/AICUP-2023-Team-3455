@@ -363,10 +363,10 @@ def main(args):
     VALIDATION_STEP = args.validation_step  #@param {type:"integer"}
     TOP_N = args.top_n  #@param {type:"integer"}
 
-    EXP_DIR = f"sent_retrieval/e{NUM_EPOCHS}_bs{TRAIN_BATCH_SIZE}_" + f"{LR}_neg{NEGATIVE_RATIO}_top{TOP_N}"
+    EXP_DIR = f"sent_retrieval/e{NUM_EPOCHS}_bs{TRAIN_BATCH_SIZE}_" + f"{LR}_neg{NEGATIVE_RATIO}_top{TOP_N}_{MODEL_NAME}"
     LOG_DIR = "logs/" + EXP_DIR
     CKPT_DIR = "checkpoints/" + EXP_DIR
-
+    LOG_FILE = CKPT_DIR + "/log.txt"
     if not Path(LOG_DIR).exists():
         Path(LOG_DIR).mkdir(parents=True)
 
@@ -445,7 +445,8 @@ def main(args):
                         ground_truths=DEV_GT,
                         top_n=TOP_N,
                     )
-                    print(val_results)
+                    with open(LOG_FILE, "a") as log_out:
+                        log_out.write(f'{current_steps}: {val_results}\n')
 
                     # log each metric separately to TensorBoard
                     for metric_name, metric_value in val_results.items():
@@ -454,7 +455,6 @@ def main(args):
                             metric_value,
                             current_steps,
                         )
-
                     save_checkpoint(model, CKPT_DIR, current_steps)
 
         print("[INFO] Finished training!")
@@ -584,7 +584,7 @@ def parse_args() -> Namespace:
         "--validation_step",
         type=int,
         help="validation step",
-        default=50
+        default=200
     )
     parser.add_argument(
         "--top_n",
@@ -593,7 +593,7 @@ def parse_args() -> Namespace:
         default=5
     )
     parser.add_argument(
-        "-do_validate",
+        "--do_validate",
         type=int,
         help="whether to do validation part",
         default=1
