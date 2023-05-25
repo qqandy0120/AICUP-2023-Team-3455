@@ -369,7 +369,7 @@ def main(args):
     TOP_N = args.top_n  #@param {type:"integer"}
 
     EXP_DIR = args.exp_name
-    double_check = input(f"CHECK MODEL Name: {EXP_DIR}\nPress any key to continue...")
+    double_check = input(f"Check Model Name and data: {EXP_DIR}\n  Train Doc: {args.train_doc_data}\n  Test Doc: {args.test_doc_data}\nPress any key to continue...")
     if not EXP_DIR:
         EXP_DIR = "sent_retrieval/"+str(datetime.now())
     else:
@@ -416,6 +416,16 @@ def main(args):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print(f'[INFO] using device {device}')
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+
+    FREEZE_RATIO = args.freeze_ratio
+    layer_sum = len(list(model.named_parameters()))
+    freeze_layer_cnt = int(FREEZE_RATIO * layer_sum)
+
+    for i, (name, param) in enumerate(model.named_parameters()):
+        if i >= freeze_layer_cnt:
+            break
+        param.requires_grad = False
+
     model.to(device)
 
     optimizer = AdamW(model.parameters(), lr=LR)
@@ -643,6 +653,11 @@ def parse_args() -> Namespace:
         "--test_size",
         type=float,
         default=0.2,
+    )
+    parser.add_argument(
+        "--freeze_ratio",
+        type=float,
+        default=0,
     )
     args = parser.parse_args()
     return args

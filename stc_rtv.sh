@@ -1,14 +1,15 @@
 python stc_rtv.py\
-    --exp_name maclrg_s2_s2\
+    --exp_name maclrg_s9_d3\
     --num_epoch 5\
-    --train_doc_data cache/train_select_all_es/select_all_es_2_avg_6_34.jsonl\
-    --test_doc_data cache/test_select_all_es/test_select_all_es_2_avg_6_55.jsonl\
+    --train_doc_data cache/train_select_all_es/select_all_es_9_avg_12_99.jsonl\
+    --test_doc_data cache/test_doc5_es/test_doc5_es_3_avg_6_19.jsonl\
     --model_name hfl/chinese-macbert-large\
     --lr 2e-5\
     --top_n 5\
+    --freeze_ratio 0\
     --train_batch_size 8\
     --test_batch_size 8\
-    --test_size 0.1\
+    --test_size 0.2\
     --neg_ratio 0.02\
     --validation_step 400\
     --do_train 1\
