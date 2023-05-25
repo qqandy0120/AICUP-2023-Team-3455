@@ -12,16 +12,20 @@ from transformers import get_scheduler
 
 def load_json(file_path: Union[Path, str]) -> pd.DataFrame:
     """jsonl_to_df read jsonl file and return a pandas DataFrame.
+
     Args:
         file_path (Union[Path, str]): The jsonl file path.
+
     Returns:
         pd.DataFrame: The jsonl file content.
+
     Example:
         >>> read_jsonl_file("data/train.jsonl")
                id            label  ... predicted_label                                      evidence_list
         0    3984          refutes  ...         REFUTES  [城市規劃是城市建設及管理的依據 ， 位於城市管理之規劃 、 建設 、 運作三個階段之首 ，...
         ..    ...              ...  ...             ...                                                ...
         945  3042         supports  ...         REFUTES  [北歐人相傳每當雷雨交加時就是索爾乘坐馬車出來巡視 ， 因此稱呼索爾為 “ 雷神 ” 。, ...
+
         [946 rows x 10 columns]
     """
     with open(file_path, "r", encoding="utf8") as json_file:
@@ -32,17 +36,22 @@ def load_json(file_path: Union[Path, str]) -> pd.DataFrame:
 
 def jsonl_dir_to_df(dir_path: Union[Path, str]) -> pd.DataFrame:
     """jsonl_dir_to_df read jsonl dir and return a pandas DataFrame.
+
     This function will read all jsonl files in the dir_path and concat them.
+
     Args:
         dir_path (Union[Path, str]): The jsonl dir path.
+
     Returns:
         pd.DataFrame: The jsonl dir content.
+
     Example:
         >>> read_jsonl_dir("data/extracted_dir/")
                id            label  ... predicted_label                                      evidence_list
         0    3984          refutes  ...         REFUTES  [城市規劃是城市建設及管理的依據 ， 位於城市管理之規劃 、 建設 、 運作三個階段之首 ，...
         ..    ...              ...  ...             ...                                                ...
         945  3042         supports  ...         REFUTES  [北歐人相傳每當雷雨交加時就是索爾乘坐馬車出來巡視 ， 因此稱呼索爾為 “ 雷神 ” 。, ...
+
         [946 rows x 10 columns]
     """
     print(f"Reading and concatenating jsonl files in {dir_path}")
@@ -55,10 +64,12 @@ def generate_evidence_to_wiki_pages_mapping(
     wiki_pages: pd.DataFrame,
 ) -> Dict[str, Dict[int, str]]:
     """generate_wiki_pages_dict generate a mapping from evidence to wiki pages by evidence id.
+
     Args:
         wiki_pages (pd.DataFrame): The wiki pages dataframe
         cache(Union[Path, str], optional): The cache file path. Defaults to None.
             If cache is None, return the result directly.
+
     Returns:
         pd.DataFrame:
     """

@@ -1,3 +1,4 @@
 data/
 checkpoints/
 .DS_Store
+cache/

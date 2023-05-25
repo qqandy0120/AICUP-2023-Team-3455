@@ -1,7 +1,8 @@
 # built-in libs
+import os
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Union
-
+import datetime
 # third-party libs
 import json
 import numpy as np
@@ -128,6 +129,7 @@ def evaluate_retrieval(
     df_evidences: pd.DataFrame,
     ground_truths: pd.DataFrame,
     top_n: int = 5,
+    exp_name: str = None,
     cal_scores: bool = True,
     save_name: str = None,
 ) -> Dict[str, float]:
@@ -172,7 +174,10 @@ def evaluate_retrieval(
 
     if save_name is not None:
         # write doc7_sent5 file
-        with open(f"data/{save_name}", "w") as f:
+        save_dir = os.path.join('data', exp_name)
+        if not Path(save_dir).exists():
+            Path(save_dir).mkdir(parents=True)
+        with open(f"{save_dir}/{save_name}", "w", encoding='utf-8') as f:
             for instance in ground_truths:
                 claim = instance["claim"]
                 predicted_evidence = top_rows[
@@ -363,15 +368,25 @@ def main(args):
     VALIDATION_STEP = args.validation_step  #@param {type:"integer"}
     TOP_N = args.top_n  #@param {type:"integer"}
 
-    EXP_DIR = f"sent_retrieval/e{NUM_EPOCHS}_bs{TRAIN_BATCH_SIZE}_" + f"{LR}_neg{NEGATIVE_RATIO}_top{TOP_N}_{MODEL_NAME}"
+    EXP_DIR = input("experiment name:")
+    if not EXP_DIR:
+        EXP_DIR = "sent_retrieval/"+str(datetime.now())
+    else:
+        EXP_DIR = "sent_retrieval/" + EXP_DIR 
     LOG_DIR = "logs/" + EXP_DIR
     CKPT_DIR = "checkpoints/" + EXP_DIR
     LOG_FILE = CKPT_DIR + "/log.txt"
+    ARG_FILE = CKPT_DIR + "/arg.json"
     if not Path(LOG_DIR).exists():
         Path(LOG_DIR).mkdir(parents=True)
 
     if not Path(CKPT_DIR).exists():
         Path(CKPT_DIR).mkdir(parents=True)
+
+
+    with open(ARG_FILE, 'w') as f:
+        # f.write(str(args))
+        json.dump(vars(args), f, indent=2)
 
     # Step 2. Combine claims and evidences
     train_df = pair_with_wiki_sentences(
@@ -461,8 +476,8 @@ def main(args):
 
     if args.do_validate == 1:
         # validation part
-        ckpt_name = "model.50.pt"  #@param {type:"string"}
-        print(f'[INFO] loading ckpt from {CKPT_DIR}/ckpt_name')
+        ckpt_name = args.model_ckpt
+        print(f'[INFO] loading ckpt from {CKPT_DIR}/{ckpt_name}')
         model = load_model(model, ckpt_name, CKPT_DIR)
         print("[INFO] Start final evaluations and write prediction files.")
         if args.do_train == 1:
@@ -480,7 +495,8 @@ def main(args):
                 df_evidences=train_evidences,
                 ground_truths=TRAIN_GT,
                 top_n=TOP_N,
-                save_name=f"train_doc5sent{TOP_N}.jsonl",
+                exp_name=EXP_DIR.split("/")[1],
+                save_name=f"train_{ckpt_name}.jsonl",
             )
             print(f"[INFO] Training scores => {train_results}")
 
@@ -491,7 +507,8 @@ def main(args):
                 df_evidences=dev_evidences,
                 ground_truths=DEV_GT,
                 top_n=TOP_N,
-                save_name=f"dev_doc5sent{TOP_N}.jsonl",
+                exp_name=EXP_DIR.split("/")[1],
+                save_name=f"dev_{ckpt_name}.jsonl",
             )
             print(f"[INFO] Validation scores => {val_results}")
 
@@ -515,32 +532,33 @@ def main(args):
             ground_truths=test_data,
             top_n=TOP_N,
             cal_scores=False,
-            save_name=f"test_doc5sent{TOP_N}.jsonl",
+            exp_name=EXP_DIR.split("/")[1],
+            save_name=f"test_{ckpt_name}.jsonl",
         )
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument(
         "--train_data",
-        type=Path,
+        type=str,
         help="path to pulic train data",
         default="data/public_train.jsonl",
     )
     parser.add_argument(
         "--train_doc_data",
-        type=Path,
+        type=str,
         help="path to pulic train data",
         default="data/train_doc5.jsonl",
     )
     parser.add_argument(
         "--test_data",
-        type=Path,
+        type=str,
         help="path to public test data",
         default="data/public_test.jsonl"
     )
     parser.add_argument(
         "--test_doc_data",
-        type=Path,
+        type=str,
         help = 'path to doc retrieve test data',
         default='data/test_doc5.jsonl'
     )
@@ -549,6 +567,11 @@ def parse_args() -> Namespace:
         type=str,
         help="pretrained model name",
         default="bert-base-chinese"
+    )
+    parser.add_argument(
+        "--model_ckpt",
+        type=str,
+        default="model.2000.pt"
     )
     parser.add_argument(
         "--num_epoch",

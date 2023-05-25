@@ -1,0 +1,14 @@
+python stc_rtv.py\
+    --num_epoch 1\
+    --train_doc_data cache/train_doc5_es/doc5_es_2_avg_5_3.jsonl\
+    --test_doc cache/train_doc5_es/doc5_es_2_avg_5_3.jsonl\
+    --model_name hfl/chinese-macbert-base\
+    --model_ckpt model.400.pt\
+    --num_epoch 10\
+    --lr 2e-5\
+    --train_batch_size 16\
+    --test_batch_size 16\
+    --neg_ratio 0.02\
+    --validation_step 400\
+    --do_train 0\
+    --do_validate 1\
