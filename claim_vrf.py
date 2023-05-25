@@ -308,14 +308,14 @@ def parse_args() -> Namespace:
         "--train_pkl_file",
         type=Path,
         help="path to train pkl data",
-        default="data/train_doc5sent5.pkl",
+        required=True,
     )
     # DEV_PKL_FILE = Path("data/dev_doc5sent5.pkl")
     parser.add_argument(
         "--dev_pkl_file",
         type=Path,
         help="path to dev pkl data",
-        default="data/dev_doc5sent5.pkl",
+        required=True,
     )
     # TEST_DATA = load_json("data/test_doc5sent5.jsonl")
     parser.add_argument(
@@ -329,7 +329,7 @@ def parse_args() -> Namespace:
         "--test_pkl_file",
         type=Path,
         help = 'path to evi retrieve test pkl file',
-        default='data/test_doc5sent5.pkl'
+        required=True,
     )
     # OUTPUT_FILENAME = "submission.jsonl"
     parser.add_argument(

@@ -344,7 +344,7 @@ def main(args):
     # GT means Ground Truth
     TRAIN_GT, DEV_GT = train_test_split(
         DOC_DATA,
-        test_size=0.2,
+        test_size=args.test_size,
         random_state=SEED,
         shuffle=True,
         stratify=_y,
@@ -368,7 +368,8 @@ def main(args):
     VALIDATION_STEP = args.validation_step  #@param {type:"integer"}
     TOP_N = args.top_n  #@param {type:"integer"}
 
-    EXP_DIR = input("experiment name:")
+    EXP_DIR = args.exp_name
+    double_check = input(f"CHECK MODEL Name: {EXP_DIR}\nPress any key to continue...")
     if not EXP_DIR:
         EXP_DIR = "sent_retrieval/"+str(datetime.now())
     else:
@@ -474,45 +475,45 @@ def main(args):
 
         print("[INFO] Finished training!")
 
+    ckpt_name = args.model_ckpt
     if args.do_validate == 1:
         # validation part
-        ckpt_name = args.model_ckpt
         print(f'[INFO] loading ckpt from {CKPT_DIR}/{ckpt_name}')
         model = load_model(model, ckpt_name, CKPT_DIR)
         print("[INFO] Start final evaluations and write prediction files.")
-        if args.do_train == 1:
-            train_evidences = pair_with_wiki_sentences_eval(
-                mapping=mapping,
-                df=pd.DataFrame(TRAIN_GT),
-            )
-            train_set = SentRetrievalBERTDataset(train_evidences, tokenizer)
-            train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
 
-            print("[INFO] Start calculating training scores")
-            probs = get_predicted_probs(model, train_dataloader, device)
-            train_results = evaluate_retrieval(
-                probs=probs,
-                df_evidences=train_evidences,
-                ground_truths=TRAIN_GT,
-                top_n=TOP_N,
-                exp_name=EXP_DIR.split("/")[1],
-                save_name=f"train_{ckpt_name}.jsonl",
-            )
-            print(f"[INFO] Training scores => {train_results}")
+        train_evidences = pair_with_wiki_sentences_eval(
+            mapping=mapping,
+            df=pd.DataFrame(TRAIN_GT),
+        )
+        train_set = SentRetrievalBERTDataset(train_evidences, tokenizer)
+        train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
 
-            print("[INFO] Start validation")
-            probs = get_predicted_probs(model, eval_dataloader, device)
-            val_results = evaluate_retrieval(
-                probs=probs,
-                df_evidences=dev_evidences,
-                ground_truths=DEV_GT,
-                top_n=TOP_N,
-                exp_name=EXP_DIR.split("/")[1],
-                save_name=f"dev_{ckpt_name}.jsonl",
-            )
-            print(f"[INFO] Validation scores => {val_results}")
+        print("[INFO] Start calculating training scores")
+        probs = get_predicted_probs(model, train_dataloader, device)
+        train_results = evaluate_retrieval(
+            probs=probs,
+            df_evidences=train_evidences,
+            ground_truths=TRAIN_GT,
+            top_n=TOP_N,
+            exp_name=EXP_DIR.split("/")[1],
+            save_name=f"train_{ckpt_name}.jsonl",
+        )
+        print(f"[INFO] Training scores => {train_results}")
 
+        print("[INFO] Start validation")
+        probs = get_predicted_probs(model, eval_dataloader, device)
+        val_results = evaluate_retrieval(
+            probs=probs,
+            df_evidences=dev_evidences,
+            ground_truths=DEV_GT,
+            top_n=TOP_N,
+            exp_name=EXP_DIR.split("/")[1],
+            save_name=f"dev_{ckpt_name}.jsonl",
+        )
+        print(f"[INFO] Validation scores => {val_results}")
 
+    if args.do_test == 1:
         # Step 4. Check on our test data
         test_data = load_json(args.test_doc_data)
 
@@ -538,6 +539,11 @@ def main(args):
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
+    parser.add_argument(
+        "--exp_name",
+        type=str,
+        required=True,
+    )
     parser.add_argument(
         "--train_data",
         type=str,
@@ -626,6 +632,17 @@ def parse_args() -> Namespace:
         type = int,
         help="whether to do training part",
         default=1
+    )
+    parser.add_argument(
+        "--do_test",
+        type = int,
+        help="whether to do testing part",
+        default=1
+    )
+    parser.add_argument(
+        "--test_size",
+        type=float,
+        default=0.2,
     )
     args = parser.parse_args()
     return args
