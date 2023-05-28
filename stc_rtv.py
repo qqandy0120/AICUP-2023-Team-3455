@@ -248,6 +248,8 @@ def pair_with_wiki_sentences(
         if df["label"].iloc[i] == "NOT ENOUGH INFO":
             continue
         claim = df["claim"].iloc[i]
+        # traditional chinese to simplified chinese
+        claim = converter.convert(claim)
         evidence_sets = df["evidence"].iloc[i]
         for evidence_set in evidence_sets:
             sents = []
@@ -275,7 +277,8 @@ def pair_with_wiki_sentences(
         if df["label"].iloc[i] == "NOT ENOUGH INFO":
             continue
         claim = df["claim"].iloc[i]
-
+        # traditional chinese to simplified chinese
+        claim = converter.convert(claim)
         evidence_set = set([(evidence[2], evidence[3])
                             for evidences in df["evidence"][i]
                             for evidence in evidences])
