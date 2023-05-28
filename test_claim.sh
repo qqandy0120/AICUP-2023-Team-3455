@@ -1,0 +1,18 @@
+CUDA_VISIBLE_DEVICES="1,3" python3 claim_vrf.py \
+--train_data data/cha_macbertlarge_best/train_model.1600.pt.jsonl  \
+--test_data data/cha_macbertlarge_best/test_model.1600.pt.jsonl \
+--dev_data data/cha_macbertlarge_best/dev_model.1600.pt.jsonl \
+--output_file submission_0528_macbert_large_6247_ensemble.jsonl \
+--model_name hfl/chinese-macbert-large \
+--ckpt_name  0.6247_model.28800.pt \
+--test_batch_size 2 \
+--train_batch_size 2 \
+--validation_step 1000 \
+--seed 1335 \
+--num_epoch 23 \
+--max_seq_len 512 \
+--lr 6.7e-5 \
+--accumulation_step 32 \
+--exp_name dynamic_loader \
+--do_train 0 \
+--do_ensemble 1 \
