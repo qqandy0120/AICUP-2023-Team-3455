@@ -14,6 +14,7 @@ from tqdm.auto import tqdm
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from transformers import (
@@ -33,6 +34,22 @@ from utils import (
     set_lr_scheduler,
 )
 from argparse import ArgumentParser, Namespace
+from collections import Counter
+import random
+import opencc
+import os 
+pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=4)
+converter = opencc.OpenCC('t2s.json')  # 't2s.json' for Traditional to Simplified conversion
+
+def same_seeds(seed):
+    random.seed(seed) 
+    np.random.seed(seed)  
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed) 
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
 
 def evidence_macro_precision(
     instance: Dict,
@@ -230,7 +247,6 @@ def pair_with_wiki_sentences(
     for i in range(len(df)):
         if df["label"].iloc[i] == "NOT ENOUGH INFO":
             continue
-
         claim = df["claim"].iloc[i]
         evidence_sets = df["evidence"].iloc[i]
         for evidence_set in evidence_sets:
@@ -243,10 +259,13 @@ def pair_with_wiki_sentences(
                     continue
                 # evidence[3] is in form of int however, mapping requires str
                 sent_idx = str(evidence[3])
-                sents.append(mapping[page][sent_idx])
-
+                # Default code
+                # sents.append(mapping[page][sent_idx]) 
+                # traditional chinese to simplified chinese
+                text = mapping[page][sent_idx]
+                text = converter.convert(text)
+                sents.append(text)
             whole_evidence = " ".join(sents)
-
             claims.append(claim)
             sentences.append(whole_evidence)
             labels.append(1)
@@ -275,8 +294,10 @@ def pair_with_wiki_sentences(
                 if pair in evidence_set:
                     continue
                 text = mapping[page][pair[1]]
-                # `np.random.rand(1) <= 0.05`: Control not to add too many negative samples
+                # `np.random.rand(1) <= negative_ratio`: Control not to add too many negative samples
                 if text != "" and np.random.rand(1) <= negative_ratio:
+                    # traditional chinese to simplified chinese
+                    text = converter.convert(text)
                     claims.append(claim)
                     sentences.append(text)
                     labels.append(0)
@@ -295,7 +316,6 @@ def pair_with_wiki_sentences_eval(
     evidence = []
     predicted_evidence = []
 
-    # negative
     for i in range(len(df)):
         # if df["label"].iloc[i] == "NOT ENOUGH INFO":
         #     continue
@@ -307,11 +327,12 @@ def pair_with_wiki_sentences_eval(
             try:
                 page_sent_id_pairs = [(page, k) for k in mapping[page]]
             except KeyError:
-                # print(f"{page} is not in our Wiki db.")
+                print(f"{page} is not in our Wiki db.")
                 continue
-
             for page_name, sentence_id in page_sent_id_pairs:
                 text = mapping[page][sentence_id]
+                # traditional chinese to simplified chinese
+                text = converter.convert(text)
                 if text != "":
                     claims.append(claim)
                     sentences.append(text)
@@ -330,7 +351,7 @@ def pair_with_wiki_sentences_eval(
 def main(args):
 
     pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
-    SEED = 42
+    SEED = args.seed
     TRAIN_DATA = load_json(args.train_data)
     TEST_DATA = load_json(args.test_data)
     DOC_DATA = load_json(args.train_doc_data)
@@ -342,6 +363,7 @@ def main(args):
     ID2LABEL: Dict[int, str] = {v: k for k, v in LABEL2ID.items()}
     _y = [LABEL2ID[data["label"]] for data in TRAIN_DATA]
     # GT means Ground Truth
+    same_seeds(SEED)
     TRAIN_GT, DEV_GT = train_test_split(
         DOC_DATA,
         test_size=args.test_size,
@@ -367,7 +389,7 @@ def main(args):
     NEGATIVE_RATIO = args.neg_ratio  #@param {type:"number"}
     VALIDATION_STEP = args.validation_step  #@param {type:"integer"}
     TOP_N = args.top_n  #@param {type:"integer"}
-
+    MAX_SEQ_LEN = args.max_seq_len
     EXP_DIR = args.exp_name
     double_check = input(f"Check Model Name and data: {EXP_DIR}\n  Train Doc: {args.train_doc_data}\n  Test Doc: {args.test_doc_data}\nPress any key to continue...")
     if not EXP_DIR:
@@ -384,7 +406,6 @@ def main(args):
     if not Path(CKPT_DIR).exists():
         Path(CKPT_DIR).mkdir(parents=True)
 
-
     with open(ARG_FILE, 'w') as f:
         # f.write(str(args))
         json.dump(vars(args), f, indent=2)
@@ -395,19 +416,28 @@ def main(args):
         pd.DataFrame(TRAIN_GT),
         NEGATIVE_RATIO,
     )
+    print(train_df)
+    print(f'training df now above')
     counts = train_df["label"].value_counts()
     print("[INFO] Now using the following train data with 0 (Negative) and 1 (Positive)")
     print(counts)
 
     dev_evidences = pair_with_wiki_sentences_eval(mapping, pd.DataFrame(DEV_GT))
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    train_dataset = SentRetrievalBERTDataset(train_df, tokenizer=tokenizer)
-    val_dataset = SentRetrievalBERTDataset(dev_evidences, tokenizer=tokenizer)
-
+    train_dataset = SentRetrievalBERTDataset(
+        train_df, 
+        tokenizer=tokenizer,
+        max_length=MAX_SEQ_LEN,
+    )
+    val_dataset = SentRetrievalBERTDataset(
+        dev_evidences, 
+        tokenizer=tokenizer,
+        max_length=MAX_SEQ_LEN
+    )
     train_dataloader = DataLoader(
         train_dataset,
         shuffle=True,
-         batch_size=TRAIN_BATCH_SIZE,
+        batch_size=TRAIN_BATCH_SIZE,
     )
     eval_dataloader = DataLoader(val_dataset, batch_size=TEST_BATCH_SIZE)
 
@@ -417,6 +447,7 @@ def main(args):
     print(f'[INFO] using device {device}')
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 
+    # freeze model weight
     FREEZE_RATIO = args.freeze_ratio
     layer_sum = len(list(model.named_parameters()))
     freeze_layer_cnt = int(FREEZE_RATIO * layer_sum)
@@ -427,12 +458,10 @@ def main(args):
         param.requires_grad = False
 
     model.to(device)
-
     optimizer = AdamW(model.parameters(), lr=LR)
     num_training_steps = NUM_EPOCHS * len(train_dataloader)
-    lr_scheduler = set_lr_scheduler(optimizer, num_training_steps)
-
-
+    warmup_steps = (int)(num_training_steps/100)
+    lr_scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: min(epoch / warmup_steps, 1.0))
 
     # Step 3. Start training
     if args.do_train == 1:
@@ -441,6 +470,10 @@ def main(args):
         progress_bar = tqdm(range(num_training_steps))
         current_steps = 0
 
+        # gradient accumulation
+        accumulation_steps = args.accumulation_step
+        total_loss = 0
+        
         for epoch in range(NUM_EPOCHS):
             model.train()
 
@@ -448,14 +481,19 @@ def main(args):
                 batch = {k: v.to(device) for k, v in batch.items()}
                 outputs = model(**batch)
                 loss = outputs.loss
+                
+                # gradient accumulation
+                loss = loss / accumulation_steps
+                total_loss += loss
                 loss.backward()
 
-                optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad()
-                progress_bar.update(1)
-                writer.add_scalar("training_loss", loss.item(), current_steps)
-
+                if (current_steps + 1) % accumulation_steps == 0:
+                    optimizer.step()
+                    optimizer.zero_grad()
+                    lr_scheduler.step()
+                    progress_bar.update(accumulation_steps)
+                    writer.add_scalar("training_loss", total_loss, current_steps)
+                    total_loss = 0
                 y_pred = torch.argmax(outputs.logits, dim=1).tolist()
                 y_true = batch["labels"].tolist()
 
@@ -482,7 +520,24 @@ def main(args):
                             current_steps,
                         )
                     save_checkpoint(model, CKPT_DIR, current_steps)
-
+            # reload negtive part
+            train_df = pair_with_wiki_sentences(
+                mapping,
+                pd.DataFrame(TRAIN_GT),
+                NEGATIVE_RATIO,
+            )
+            print(train_df)
+            print(f'training df now above')
+            train_dataset = SentRetrievalBERTDataset(
+                train_df, 
+                tokenizer=tokenizer,
+                max_length=MAX_SEQ_LEN,
+            )
+            train_dataloader = DataLoader(
+                train_dataset,
+                shuffle=True,
+                batch_size=TRAIN_BATCH_SIZE,
+            )
         print("[INFO] Finished training!")
 
     ckpt_name = args.model_ckpt
@@ -496,7 +551,11 @@ def main(args):
             mapping=mapping,
             df=pd.DataFrame(TRAIN_GT),
         )
-        train_set = SentRetrievalBERTDataset(train_evidences, tokenizer)
+        train_set = SentRetrievalBERTDataset(
+            train_evidences, 
+            tokenizer,
+            max_length=MAX_SEQ_LEN
+        )
         train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
 
         print("[INFO] Start calculating training scores")
@@ -532,7 +591,11 @@ def main(args):
             pd.DataFrame(test_data),
             is_testset=True,
         )
-        test_set = SentRetrievalBERTDataset(test_evidences, tokenizer)
+        test_set = SentRetrievalBERTDataset(
+            test_evidences, 
+            tokenizer,
+            max_length=MAX_SEQ_LEN
+        )
         test_dataloader = DataLoader(test_set, batch_size=TEST_BATCH_SIZE)
 
         print("[INFO] Start predicting the test data")
@@ -626,6 +689,12 @@ def parse_args() -> Namespace:
         default=200
     )
     parser.add_argument(
+        "--seed",
+        type=int,
+        help="random seed",
+        default=1335
+    )
+    parser.add_argument(
         "--top_n",
         type=int,
         help="choose top n evi",
@@ -658,6 +727,18 @@ def parse_args() -> Namespace:
         "--freeze_ratio",
         type=float,
         default=0,
+    )
+    parser.add_argument(
+        "--max_seq_len",
+        type=int,
+        help="max_seq_len",
+        default=512
+    )
+    parser.add_argument(
+        "--accumulation_step",
+        type=int,
+        help="gradient accumulation steps",
+        default=32
     )
     args = parser.parse_args()
     return args
