@@ -323,7 +323,8 @@ def pair_with_wiki_sentences_eval(
         # if df["label"].iloc[i] == "NOT ENOUGH INFO":
         #     continue
         claim = df["claim"].iloc[i]
-
+        # traditional chinese to simplified chinese
+        claim = converter.convert(claim)       
         predicted_pages = df["predicted_pages"][i]
         for page in predicted_pages:
             page = page.replace(" ", "_")
