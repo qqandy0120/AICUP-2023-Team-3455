@@ -83,7 +83,10 @@ def evidence_macro_precision(
                    for eg in instance["evidence"]
                    for e in eg
                    if e[3] is not None]
+        
+        ## problem of t2s
         claim = instance["claim"]
+        claim = converter.convert(claim)
         predicted_evidence = top_rows[top_rows["claim"] ==
                                       claim]["predicted_evidence"].tolist()
 
@@ -126,8 +129,11 @@ def evidence_macro_recall(
             [len(eg) == 0 for eg in instance]):
             return 1.0, 1.0
 
+        ## problem of t2s
         claim = instance["claim"]
-
+        claim = converter.convert(claim)
+        # print(f"top_rows: {top_rows['claim']}")
+        # print(claim)
         predicted_evidence = top_rows[top_rows["claim"] ==
                                       claim]["predicted_evidence"].tolist()
 
@@ -160,6 +166,16 @@ def evaluate_retrieval(
 
     Returns:
         Dict[str, float]: F1 score, precision, and recall
+
+    Example:
+        val_results = evaluate_retrieval(
+            probs=probs,
+            df_evidences=dev_evidences,
+            ground_truths=DEV_GT,
+            top_n=TOP_N,
+            exp_name=EXP_DIR.split("/")[1],
+            save_name=f"dev_{ckpt_name}_{TOP_N}.jsonl",
+        )
     """
     df_evidences["prob"] = probs
     top_rows = (
@@ -190,13 +206,15 @@ def evaluate_retrieval(
         f1 = 2.0 * pr * rec / (pr + rec)
 
     if save_name is not None:
-        # write doc7_sent5 file
+        # write doc5_sent5 file
         save_dir = os.path.join('data', exp_name)
         if not Path(save_dir).exists():
             Path(save_dir).mkdir(parents=True)
         with open(f"{save_dir}/{save_name}", "w", encoding='utf-8') as f:
             for instance in ground_truths:
                 claim = instance["claim"]
+                claim = converter.convert(claim) 
+                # claim and top_rows all simplified
                 predicted_evidence = top_rows[
                     top_rows["claim"] == claim]["predicted_evidence"].tolist()
                 instance["predicted_evidence"] = predicted_evidence
@@ -304,7 +322,7 @@ def pair_with_wiki_sentences(
                     claims.append(claim)
                     sentences.append(text)
                     labels.append(0)
-
+    # print(f'pair with wiki sentences training example = claim: {claims[0]}, sent: {sentences[0]}, label: {labels[0]}')
     return pd.DataFrame({"claim": claims, "text": sentences, "label": labels})
 
 
@@ -331,7 +349,7 @@ def pair_with_wiki_sentences_eval(
             try:
                 page_sent_id_pairs = [(page, k) for k in mapping[page]]
             except KeyError:
-                print(f"{page} is not in our Wiki db.")
+                # print(f"{page} is not in our Wiki db.")
                 continue
             for page_name, sentence_id in page_sent_id_pairs:
                 text = mapping[page][sentence_id]
@@ -343,7 +361,7 @@ def pair_with_wiki_sentences_eval(
                     if not is_testset:
                         evidence.append(df["evidence"].iloc[i])
                     predicted_evidence.append([page_name, int(sentence_id)])
-
+    # print(f'pair with wiki sentences eval example = claim: {claims[0]}, sent: {sentences[0]}, predicted evidence: {predicted_evidence[0]}')
     return pd.DataFrame({
         "claim": claims,
         "text": sentences,
@@ -420,30 +438,35 @@ def main(args):
         pd.DataFrame(TRAIN_GT),
         NEGATIVE_RATIO,
     )
-    print(train_df)
-    print(f'training df now above')
+    # print(f'{train_df}\ntraining df now above')
+
     counts = train_df["label"].value_counts()
     print("[INFO] Now using the following train data with 0 (Negative) and 1 (Positive)")
     print(counts)
 
     dev_evidences = pair_with_wiki_sentences_eval(mapping, pd.DataFrame(DEV_GT))
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    
     train_dataset = SentRetrievalBERTDataset(
         train_df, 
         tokenizer=tokenizer,
         max_length=MAX_SEQ_LEN,
-    )
-    val_dataset = SentRetrievalBERTDataset(
-        dev_evidences, 
-        tokenizer=tokenizer,
-        max_length=MAX_SEQ_LEN
     )
     train_dataloader = DataLoader(
         train_dataset,
         shuffle=True,
         batch_size=TRAIN_BATCH_SIZE,
     )
-    eval_dataloader = DataLoader(val_dataset, batch_size=TEST_BATCH_SIZE)
+
+    val_dataset = SentRetrievalBERTDataset(
+        dev_evidences, 
+        tokenizer=tokenizer,
+        max_length=MAX_SEQ_LEN
+    )
+    eval_dataloader = DataLoader(
+        val_dataset, 
+        batch_size=TEST_BATCH_SIZE
+    )
 
     del train_df
     
@@ -498,9 +521,9 @@ def main(args):
                     progress_bar.update(accumulation_steps)
                     writer.add_scalar("training_loss", total_loss, current_steps)
                     total_loss = 0
+                
                 y_pred = torch.argmax(outputs.logits, dim=1).tolist()
                 y_true = batch["labels"].tolist()
-
                 current_steps += 1
 
                 if current_steps % VALIDATION_STEP == 0 and current_steps > 0:
@@ -562,18 +585,6 @@ def main(args):
         )
         train_dataloader = DataLoader(train_set, batch_size=TEST_BATCH_SIZE)
 
-        print("[INFO] Start calculating training scores")
-        probs = get_predicted_probs(model, train_dataloader, device)
-        train_results = evaluate_retrieval(
-            probs=probs,
-            df_evidences=train_evidences,
-            ground_truths=TRAIN_GT,
-            top_n=TOP_N,
-            exp_name=EXP_DIR.split("/")[1],
-            save_name=f"train_{ckpt_name}.jsonl",
-        )
-        print(f"[INFO] Training scores => {train_results}")
-
         print("[INFO] Start validation")
         probs = get_predicted_probs(model, eval_dataloader, device)
         val_results = evaluate_retrieval(
@@ -582,9 +593,22 @@ def main(args):
             ground_truths=DEV_GT,
             top_n=TOP_N,
             exp_name=EXP_DIR.split("/")[1],
-            save_name=f"dev_{ckpt_name}.jsonl",
+            save_name=f"dev_{ckpt_name}_{TOP_N}.jsonl",
         )
         print(f"[INFO] Validation scores => {val_results}")
+
+        print("[INFO] Start calculating training scores")
+        probs = get_predicted_probs(model, train_dataloader, device)
+        train_results = evaluate_retrieval(
+            probs=probs,
+            df_evidences=train_evidences,
+            ground_truths=TRAIN_GT,
+            top_n=TOP_N,
+            exp_name=EXP_DIR.split("/")[1],
+            save_name=f"train_{ckpt_name}_{TOP_N}.jsonl",
+        )
+        print(f"[INFO] Training scores => {train_results}")
+
 
     if args.do_test == 1:
         # Step 4. Check on our test data
@@ -611,7 +635,7 @@ def main(args):
             top_n=TOP_N,
             cal_scores=False,
             exp_name=EXP_DIR.split("/")[1],
-            save_name=f"test_{ckpt_name}.jsonl",
+            save_name=f"test_{ckpt_name}_{TOP_N}.jsonl",
         )
 
 def parse_args() -> Namespace:
