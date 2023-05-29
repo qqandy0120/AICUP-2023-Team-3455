@@ -13,15 +13,34 @@ import pandas as pd
 import wikipedia
 from hanlp.components.pipeline import Pipeline
 from pandarallel import pandarallel
+from tqdm import tqdm
 
 # our own libs
 from utils import load_json
+import numpy as np
+import pandas as pd
+from pandarallel import pandarallel
+from tqdm.auto import tqdm
+import random
+from dataset import AicupTopkEvidenceBERTDataset
+from utils import (
+    generate_evidence_to_wiki_pages_mapping,
+    jsonl_dir_to_df,
+    load_json,
+    load_model,
+    save_checkpoint,
+    set_lr_scheduler,
+)
+from argparse import ArgumentParser, Namespace
+from collections import Counter
+import opencc
+import os 
 
 pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
 wikipedia.set_lang("zh")
 
-TRAIN_DATA = load_json("data/public_train.jsonl")
-TEST_DATA = load_json("data/public_test.jsonl")
+TRAIN_DATA = load_json("data/all_train_data.jsonl")
+TEST_DATA = load_json("data/all_test_data.jsonl")
 CONVERTER_T2S = opencc.OpenCC("t2s.json")
 CONVERTER_S2T = opencc.OpenCC("s2t.json")
 
@@ -52,7 +71,6 @@ class Evidence:
 
 def do_st_corrections(text: str) -> str:
     simplified = CONVERTER_T2S.convert(text)
-
     return CONVERTER_S2T.convert(simplified)
 
 
@@ -66,7 +84,6 @@ def get_nps_hanlp(
         do_st_corrections("".join(subtree.leaves()))
         for subtree in tree.subtrees(lambda t: t.label() == "NP")
     ]
-
     return nps
 
 
@@ -130,17 +147,16 @@ def save_doc(
     mode: str = "train",
     num_pred_doc: int = 5,
 ) -> None:
-    with open(
-        f"data/{mode}_doc{num_pred_doc}.jsonl",
-        "w",
-        encoding="utf8",
-    ) as f:
+    with open( f"data/all_{mode}_doc{num_pred_doc}.jsonl", "w", encoding="utf8",) as f:
         for i, d in enumerate(data):
             d["predicted_pages"] = list(predictions.iloc[i])
             f.write(json.dumps(d, ensure_ascii=False) + "\n")
 
-
-def get_pred_pages(series_data: pd.Series) -> Set[Dict[int, str]]:
+def get_pred_pages(
+    series_data: pd.Series, 
+    wiki_mapping,
+    mode: str = "train",
+    ) -> Set[Dict[int, str]]:
     results = []
     tmp_muji = []
     # wiki_page: its index showned in claim
@@ -187,7 +203,6 @@ def get_pred_pages(series_data: pd.Series) -> Set[Dict[int, str]]:
                     ((new_term := term.split(" ")[0]) in claim) or
                     ((new_term := term.replace("-", " ")) in claim)):
                     matched = True
-
                 elif "·" in term:
                     splitted = term.split("·")
                     for split in splitted:
@@ -199,21 +214,47 @@ def get_pred_pages(series_data: pd.Series) -> Set[Dict[int, str]]:
                     # post-processing
                     term = term.replace(" ", "_")
                     term = term.replace("-", "")
-                    results.append(term)
-                    mapping[term] = claim.find(new_term)
-                    tmp_muji.append(new_term)
+                    
+                    # eliminate out of wiki db pages
+                    if term in wiki_mapping.keys():
+                        results.append(term)
+                        mapping[term] = claim.find(new_term)
+                        tmp_muji.append(new_term)
+    
+    # print(results)  ## select all
+    
+    instance = {
+        'id': series_data['id'],
+    }
+    if mode == 'train':
+        instance.update({'label' : series_data['label']})
+    instance.update({'claim': series_data['claim']})
+    instance.update({"predicted_pages": results})
 
-    # 5 is a hyperparameter
-    if len(results) > 5:
+    with open( f"data/all_{mode}_doc_select_all.jsonl", "a", encoding="utf8",) as f:
+        f.write(json.dumps(instance, ensure_ascii=False) + "\n")
+            
+    final_results = results
+    topk = 10
+    if len(final_results) > topk:
         assert -1 not in mapping.values()
-        results = sorted(mapping, key=mapping.get)[:5]
-    elif len(results) < 1:
+        results = sorted(mapping, key=mapping.get)[:topk] 
+    elif len(final_results) < 1:
         results = first_wiki_term
+
+    instance['predicted_pages'] = results
+    with open( f"data/all_{mode}_doc_{topk}.jsonl", "a", encoding="utf8",) as f:
+        f.write(json.dumps(instance, ensure_ascii=False) + "\n")
 
     return set(results)
 
-
 if __name__ == "__main__":
+
+    print('[INFO] Preloading wiki database...')
+    wiki_pages = jsonl_dir_to_df("data/wiki-pages")
+    wiki_mapping = generate_evidence_to_wiki_pages_mapping(wiki_pages,)
+    del wiki_pages
+    print('[INFO] Finish preloading wiki database!')
 
     # Step 1. Get noun phrases from hanlp consituency parsing tree
     ## set up HanLP predictor
@@ -227,59 +268,50 @@ if __name__ == "__main__":
     ))
 
     ## create parsing tree
+    hanlp_results = []
     hanlp_file = f"data/hanlp_con_results.pkl"
     if Path(hanlp_file).exists():
+        print(f'[INFO] loading from {hanlp_file}')
         with open(hanlp_file, "rb") as f:
             hanlp_results = pickle.load(f)
     else:
-        hanlp_results = [get_nps_hanlp(predictor, d) for d in TRAIN_DATA]
+        for d in tqdm(TRAIN_DATA, total=11620):
+            hanlp_results.append(get_nps_hanlp(predictor, d))
+        print(f'[INFO] creating {hanlp_file}')
         with open(hanlp_file, "wb") as f:
             pickle.dump(hanlp_results, f)
 
-    ## get pages via online api
-    doc_path = f"data/train_doc5.jsonl"
-    if Path(doc_path).exists():
-        with open(doc_path, "r", encoding="utf8") as f:
-            predicted_results = pd.Series([
-                set(json.loads(line)["predicted_pages"])
-                for line in f
-            ])
-    else:
-        train_df = pd.DataFrame(TRAIN_DATA)
-        train_df.loc[:, "hanlp_results"] = hanlp_results
-        predicted_results = train_df.apply(get_pred_pages, axis=1)
-        save_doc(TRAIN_DATA, predicted_results, mode="train")
-
+    # hanlp_results = [get_nps_hanlp(predictor, d) for d in TRAIN_DATA]
+    # with open(hanlp_file, "wb") as f:
+    #     pickle.dump(hanlp_results, f)
+        
+    train_df = pd.DataFrame(TRAIN_DATA)  # TODO: modify train_data
+    train_df.loc[:, "hanlp_results"] = hanlp_results
+    predicted_results = train_df.apply( lambda x :
+        get_pred_pages(x, wiki_mapping = wiki_mapping, mode="train"), axis=1
+    )
+    save_doc(TRAIN_DATA, predicted_results, mode="train")
     # Step 2. Calculate our results
     calculate_precision(TRAIN_DATA, predicted_results)
     calculate_recall(TRAIN_DATA, predicted_results)
 
     # Step3. Repeat the some processs on test set
     ## create parsing tree
+    hanlp_results = []
     hanlp_test_file = f"data/hanlp_con_test_results.pkl"
     if Path(hanlp_test_file).exists():
-        with open(hanlp_file, "rb") as f:
+        print(f'[INFO] loading from {hanlp_test_file}')
+        with open(hanlp_test_file, "rb") as f:
             hanlp_results = pickle.load(f)
     else:
-        hanlp_results = [get_nps_hanlp(predictor, d) for d in TEST_DATA]
-        with open(hanlp_file, "wb") as f:
+        print(f'[INFO] creating {hanlp_test_file}')
+        for d in tqdm(TEST_DATA, total=9038):
+            hanlp_results.append(get_nps_hanlp(predictor, d))
+        with open(hanlp_test_file, "wb") as f:
             pickle.dump(hanlp_results, f)
     
-    ## get pages via wiki online api
-    test_doc_path = f"data/test_doc5.jsonl"
-    if Path(test_doc_path).exists():
-        with open(test_doc_path, "r", encoding="utf8") as f:
-            test_results = pd.Series(
-                [set(json.loads(line)["predicted_pages"]) for line in f])
-    else:
-        test_df = pd.DataFrame(TEST_DATA)
-        test_df.loc[:, "hanlp_results"] = hanlp_results
-        test_results = test_df.parallel_apply(get_pred_pages, axis=1)
-        save_doc(TEST_DATA, test_results, mode="test")
-
-
-
-
-
-
-
+    test_df = pd.DataFrame(TEST_DATA)
+    test_df.loc[:, "hanlp_results"] = hanlp_results
+    test_results = test_df.apply( lambda x :
+        get_pred_pages(x, wiki_mapping = wiki_mapping, mode="test"), axis=1
+    )
