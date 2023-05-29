@@ -1,0 +1,18 @@
+python stc_rtv.py\
+    --exp_name maclrg_d9_d3_f05_e50\
+    --num_epoch 50\
+    --train_doc_data cache/train_doc5_es/doc5_es_9_avg_12_01.jsonl\
+    --test_doc_data cache/test_doc5_es/test_doc5_es_3_avg_6_19.jsonl\
+    --model_name hfl/chinese-macbert-large\
+    --lr 2e-5\
+    --top_n 5\
+    --freeze_ratio 0.5\
+    --train_batch_size 8\
+    --test_batch_size 8\
+    --test_size 0.1\
+    --neg_ratio 0.02\
+    --validation_step 800\
+    --do_train 1\
+    --do_validate 0\
+    --do_test 0\
+    --model_ckpt model.1600.pt\
