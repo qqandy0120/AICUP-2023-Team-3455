@@ -10,13 +10,13 @@ import random
 import torch
 from sklearn.metrics import accuracy_score
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     get_scheduler,
+    get_linear_schedule_with_warmup,
 )
 from dataset import AicupTopkEvidenceBERTDataset
 from utils import (
@@ -117,6 +117,10 @@ def join_with_topk_evidence(
         df["evidence"] = df["evidence"].apply(
             lambda x: [[x]] if not isinstance(x[0], list) else [x]
             if not isinstance(x[0][0], list) else x)
+    
+    # convert claim to simplified chinese
+    df['claim'] = df['claim'].apply(lambda x : converter.convert(x))
+    print(df['claim'])
 
     print(f"Extracting evidence_list for the {mode} mode ...")
     if mode == "eval":
@@ -144,7 +148,16 @@ def join_with_topk_evidence(
             for _, _, evi_id, evi_idx in evi_list if evi_id != None
         ][:topk] if isinstance(x, list) else [])
 
-        df['concat_predicted_evidence'] = df["predicted_evidence"].apply( lambda x : random.sample(x, min(len(x), topk)))
+        # get ready for concat predicted evi + shuffle
+        # TODO: remove the same sent in predicted and evi
+        df['concat_predicted_evidence'] = df.apply( lambda row:[
+                x for x in row["predicted_evidence"] if x not in row['evidence']
+            ],axis = 1
+        )
+        df['concat_predicted_evidence'] = df['concat_predicted_evidence'].apply( lambda x : random.sample(x, min(len(x), topk)))
+        df['concat_predicted_evidence'] = df['concat_predicted_evidence'].apply(shuffle_evidence)
+
+        # concat evi list to [:topk] + shuffle
         df["evidence_list"] = df.apply(lambda row: (row['evidence_list'] + row['concat_predicted_evidence'])[:topk], axis=1)
         df["evidence_list"] = df["evidence_list"].apply(shuffle_evidence)
         df["evidence_list"] = df["evidence_list"].apply(lambda x: [
@@ -157,9 +170,8 @@ def join_with_topk_evidence(
             [converter.convert(sent) for sent in x]
         )
         # for debug
-        df['row_length'] = df["evidence_list"].apply(lambda row: len(row)) 
-        print(df['row_length']) 
-        
+        # df['row_length'] = df["evidence_list"].apply(lambda row: len(row)) 
+        # print(df['row_length']) 
         print(df["evidence_list"])
         print(f'\nrunning {mode} mode\n')
     return df
@@ -189,6 +201,7 @@ def main(args):
     EXP_DIR = f"claim_verification/{args.exp_name}_e{NUM_EPOCHS}_bs{TRAIN_BATCH_SIZE}_" + f"{LR}_top{EVIDENCE_TOPK}" + f'_{MODEL_NAME}'
     LOG_DIR = "logs/" + EXP_DIR
     CKPT_DIR = "checkpoints/" + EXP_DIR
+    LOG_FILE = CKPT_DIR + "/log.txt"
     best_score = 0
     BEST_CKPT = args.ckpt_name
     validation_scores = []
@@ -252,8 +265,11 @@ def main(args):
     # lr_scheduler = set_lr_scheduler(optimizer, num_training_steps)
     # scheduler with warmup
     warmup_steps = (int)(num_training_steps/100)
-    lr_scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: min(epoch / warmup_steps, 1.0))
-
+    lr_scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=warmup_steps,
+        num_training_steps=num_training_steps
+    )
     if args.do_train == 1:
         writer = SummaryWriter(LOG_DIR)
         progress_bar = tqdm(range(num_training_steps))
@@ -305,13 +321,18 @@ def main(args):
                         current_steps,
                         mark=f"{val_results['val_acc']:.4f}",
                     )
+                    # save validate result to log
+                    with open(LOG_FILE, "a") as log_out:
+                        log_out.write(f'{current_steps} steps: {val_results}\n')
+                    print(f'{current_steps} steps: {val_results}\n')
                     # save top K checkpoints
                     validation_scores = sorted(validation_scores, reverse=True)[:args.save_checkpoints_limit]
                     for file_name in os.listdir(CKPT_DIR):
                         if file_name.endswith('.pt') and file_name.split('_')[0] not in validation_scores:
                             os.remove(os.path.join(CKPT_DIR, file_name))
 
-            #TODO: reload dataset
+            #reload dataset
+            print(f'[INFO] Reloading train dataset')
             train_df = join_with_topk_evidence(
                 pd.DataFrame(TRAIN_DATA),
                 mapping,
@@ -362,7 +383,7 @@ def main(args):
         elif args.do_ensemble == 1:
             predict_label_list = []
             predict_dataset = test_df.copy()
-            ckpt_list = sorted(os.listdir(CKPT_DIR), reverse=True)[:5]
+            ckpt_list = sorted(os.listdir(CKPT_DIR), reverse=True)[:args.do_ensemble_topk]
             for ckpt in ckpt_list:
                 print(f'loading {ckpt} to predict\n')
                 model = load_model(model, ckpt, CKPT_DIR)
@@ -516,7 +537,7 @@ def parse_args() -> Namespace:
         "--max_seq_len",
         type=int,
         help="max_seq_len",
-        default=256
+        default=512
     )
     # EVIDENCE_TOPK = 5  #@param {type:"integer"}
     parser.add_argument(
@@ -542,6 +563,12 @@ def parse_args() -> Namespace:
         type = int,
         help="whether to do ensemble",
         default=0
+    )
+    parser.add_argument(
+        "--do_ensemble_topk",
+        type = int,
+        help="how many model to do ensemble",
+        default=3
     )
     args = parser.parse_args()
     return args
