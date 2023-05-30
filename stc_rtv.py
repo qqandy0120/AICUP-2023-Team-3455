@@ -14,13 +14,13 @@ from tqdm.auto import tqdm
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     get_scheduler,
+    get_linear_schedule_with_warmup,
 )
 from dataset import SentRetrievalBERTDataset
 
@@ -52,6 +52,7 @@ def same_seeds(seed):
     torch.backends.cudnn.deterministic = True
 
 def evidence_macro_precision(
+    args,
     instance: Dict,
     top_rows: pd.DataFrame,
 ) -> Tuple[float, float]:
@@ -86,7 +87,8 @@ def evidence_macro_precision(
         
         ## problem of t2s
         claim = instance["claim"]
-        claim = converter.convert(claim)
+        if args.do_t2s == 1:
+            claim = converter.convert(claim)
         predicted_evidence = top_rows[top_rows["claim"] ==
                                       claim]["predicted_evidence"].tolist()
 
@@ -102,6 +104,7 @@ def evidence_macro_precision(
 
 
 def evidence_macro_recall(
+    args,
     instance: Dict,
     top_rows: pd.DataFrame,
 ) -> Tuple[float, float]:
@@ -131,7 +134,8 @@ def evidence_macro_recall(
 
         ## problem of t2s
         claim = instance["claim"]
-        claim = converter.convert(claim)
+        if args.do_t2s == 1:
+            claim = converter.convert(claim)
         # print(f"top_rows: {top_rows['claim']}")
         # print(claim)
         predicted_evidence = top_rows[top_rows["claim"] ==
@@ -148,6 +152,7 @@ def evidence_macro_recall(
 
 
 def evaluate_retrieval(
+    args,
     probs: np.ndarray,
     df_evidences: pd.DataFrame,
     ground_truths: pd.DataFrame,
@@ -191,11 +196,11 @@ def evaluate_retrieval(
         macro_recall_hits = 0
 
         for i, instance in enumerate(ground_truths):
-            macro_prec = evidence_macro_precision(instance, top_rows)
+            macro_prec = evidence_macro_precision(args,instance, top_rows)
             macro_precision += macro_prec[0]
             macro_precision_hits += macro_prec[1]
 
-            macro_rec = evidence_macro_recall(instance, top_rows)
+            macro_rec = evidence_macro_recall(args,instance, top_rows)
             macro_recall += macro_rec[0]
             macro_recall_hits += macro_rec[1]
 
@@ -213,7 +218,8 @@ def evaluate_retrieval(
         with open(f"{save_dir}/{save_name}", "w", encoding='utf-8') as f:
             for instance in ground_truths:
                 claim = instance["claim"]
-                claim = converter.convert(claim) 
+                if args.do_t2s == 1:
+                    claim = converter.convert(claim)
                 # claim and top_rows all simplified
                 predicted_evidence = top_rows[
                     top_rows["claim"] == claim]["predicted_evidence"].tolist()
@@ -250,8 +256,9 @@ def get_predicted_probs(
 
     return np.array(probs)
 
-
+# TODO: training single sent / 
 def pair_with_wiki_sentences(
+    args,
     mapping: Dict[str, Dict[int, str]],
     df: pd.DataFrame,
     negative_ratio: float,
@@ -260,35 +267,63 @@ def pair_with_wiki_sentences(
     claims = []
     sentences = []
     labels = []
-
+    
     # positive
     for i in range(len(df)):
         if df["label"].iloc[i] == "NOT ENOUGH INFO":
             continue
         claim = df["claim"].iloc[i]
         # traditional chinese to simplified chinese
-        claim = converter.convert(claim)
+        if args.do_t2s == 1:
+            claim = converter.convert(claim)
         evidence_sets = df["evidence"].iloc[i]
-        for evidence_set in evidence_sets:
-            sents = []
-            for evidence in evidence_set:
-                # evidence[2] is the page title
-                page = evidence[2].replace(" ", "_")
-                # the only page with weird name
-                if page == "臺灣海峽危機#第二次臺灣海峽危機（1958）":
-                    continue
-                # evidence[3] is in form of int however, mapping requires str
-                sent_idx = str(evidence[3])
-                # Default code
-                # sents.append(mapping[page][sent_idx]) 
-                # traditional chinese to simplified chinese
-                text = mapping[page][sent_idx]
-                text = converter.convert(text)
-                sents.append(text)
-            whole_evidence = " ".join(sents)
-            claims.append(claim)
-            sentences.append(whole_evidence)
-            labels.append(1)
+        if args.do_single_evi_train == 1:
+            for evidence_set in evidence_sets:
+                for evidence in evidence_set:
+                    # evidence[2] is the page title
+                    page = evidence[2].replace(" ", "_")
+                    # the only page with weird name
+                    if page == "臺灣海峽危機#第二次臺灣海峽危機（1958）":
+                        continue
+                    # evidence[3] is in form of int however, mapping requires str
+                    sent_idx = str(evidence[3])
+                    # Default code
+                    # sents.append(mapping[page][sent_idx]) 
+                    # traditional chinese to simplified chinese
+                    text = mapping[page][sent_idx]
+                    if args.do_t2s == 1:
+                        text = converter.convert(text)
+                    claims.append(claim)
+                    if args.do_concat_page_name_train == 1:
+                        sentences.append(" [SEP] ".join([page, text]))
+                    else:    
+                        sentences.append(text)
+                    labels.append(1)
+        else:
+            for evidence_set in evidence_sets:
+                sents = []
+                for evidence in evidence_set:
+                    # evidence[2] is the page title
+                    page = evidence[2].replace(" ", "_")
+                    # the only page with weird name
+                    if page == "臺灣海峽危機#第二次臺灣海峽危機（1958）":
+                        continue
+                    # evidence[3] is in form of int however, mapping requires str
+                    sent_idx = str(evidence[3])
+                    # Default code
+                    # sents.append(mapping[page][sent_idx]) 
+                    # traditional chinese to simplified chinese
+                    text = mapping[page][sent_idx]
+                    if args.do_t2s == 1:
+                        text = converter.convert(text)
+                    sents.append(text)
+                if args.do_concat_page_name_train == 1:
+                    print('this need to modify architecture')
+                    return NotImplementedError()
+                whole_evidence = " ".join(sents)
+                claims.append(claim)
+                sentences.append(whole_evidence)
+                labels.append(1)
 
     # negative
     for i in range(len(df)):
@@ -296,7 +331,8 @@ def pair_with_wiki_sentences(
             continue
         claim = df["claim"].iloc[i]
         # traditional chinese to simplified chinese
-        claim = converter.convert(claim)
+        if args.do_t2s == 1:
+            claim = converter.convert(claim)
         evidence_set = set([(evidence[2], evidence[3])
                             for evidences in df["evidence"][i]
                             for evidence in evidences])
@@ -318,15 +354,20 @@ def pair_with_wiki_sentences(
                 # `np.random.rand(1) <= negative_ratio`: Control not to add too many negative samples
                 if text != "" and np.random.rand(1) <= negative_ratio:
                     # traditional chinese to simplified chinese
-                    text = converter.convert(text)
+                    if args.do_t2s == 1:
+                        text = converter.convert(text)
                     claims.append(claim)
-                    sentences.append(text)
+                    if args.do_concat_page_name_train == 1:
+                        sentences.append(" [SEP] ".join([page, text]))
+                    else:    
+                        sentences.append(text)
                     labels.append(0)
-    # print(f'pair with wiki sentences training example = claim: {claims[0]}, sent: {sentences[0]}, label: {labels[0]}')
+    print(f'[INFO] Train example = claim: {claims[0]}, sent: {sentences[0]}, label: {labels[0]}')
     return pd.DataFrame({"claim": claims, "text": sentences, "label": labels})
 
 
 def pair_with_wiki_sentences_eval(
+    args,
     mapping: Dict[str, Dict[int, str]],
     df: pd.DataFrame,
     is_testset: bool = False,
@@ -342,7 +383,8 @@ def pair_with_wiki_sentences_eval(
         #     continue
         claim = df["claim"].iloc[i]
         # traditional chinese to simplified chinese
-        claim = converter.convert(claim)       
+        if args.do_t2s == 1:
+            claim = converter.convert(claim)       
         predicted_pages = df["predicted_pages"][i]
         for page in predicted_pages:
             page = page.replace(" ", "_")
@@ -354,14 +396,18 @@ def pair_with_wiki_sentences_eval(
             for page_name, sentence_id in page_sent_id_pairs:
                 text = mapping[page][sentence_id]
                 # traditional chinese to simplified chinese
-                text = converter.convert(text)
+                if args.do_t2s == 1:
+                    text = converter.convert(text)
                 if text != "":
                     claims.append(claim)
-                    sentences.append(text)
+                    if args.do_concat_page_name_train == 1:
+                        sentences.append(" [SEP] ".join([page, text]))
+                    else:    
+                        sentences.append(text)
                     if not is_testset:
                         evidence.append(df["evidence"].iloc[i])
                     predicted_evidence.append([page_name, int(sentence_id)])
-    # print(f'pair with wiki sentences eval example = claim: {claims[0]}, sent: {sentences[0]}, predicted evidence: {predicted_evidence[0]}')
+    print(f'\n[INFO] Dev and eval example = claim: {claims[0]}, sent: {sentences[0]}, predicted evidence: {predicted_evidence[0]}')
     return pd.DataFrame({
         "claim": claims,
         "text": sentences,
@@ -394,13 +440,6 @@ def main(args):
         stratify=_y,
     )
 
-    # preload wiki database
-    print('Preloading wiki database...')
-    wiki_pages = jsonl_dir_to_df("data/wiki-pages")
-    mapping = generate_evidence_to_wiki_pages_mapping(wiki_pages)
-    del wiki_pages
-    print('Finish preloading wiki database!')
-
     # Step 1. Setup training environment
     #@title  { display-mode: "form" }
     MODEL_NAME = args.model_name  #@param {type:"string"}
@@ -413,7 +452,7 @@ def main(args):
     TOP_N = args.top_n  #@param {type:"integer"}
     MAX_SEQ_LEN = args.max_seq_len
     EXP_DIR = args.exp_name
-    double_check = input(f"Check Model Name and data: {EXP_DIR}\n  Train Doc: {args.train_doc_data}\n  Test Doc: {args.test_doc_data}\nPress any key to continue...")
+    double_check = input(f"[DOUBLE CHECK] Check Model Name and data: {EXP_DIR}\n  Train Doc: {args.train_doc_data}\n  Test Doc: {args.test_doc_data}\n[DOUBLE CHECK] Press any key to continue...********************************")
     if not EXP_DIR:
         EXP_DIR = "sent_retrieval/"+str(datetime.now())
     else:
@@ -432,21 +471,34 @@ def main(args):
         # f.write(str(args))
         json.dump(vars(args), f, indent=2)
 
+    # preload wiki database
+    print('Preloading wiki database...')
+    wiki_pages = jsonl_dir_to_df("data/wiki-pages")
+    mapping = generate_evidence_to_wiki_pages_mapping(wiki_pages)
+    del wiki_pages
+    print('Finish preloading wiki database!')
+
     # Step 2. Combine claims and evidences
     train_df = pair_with_wiki_sentences(
+        args,
         mapping,
         pd.DataFrame(TRAIN_GT),
         NEGATIVE_RATIO,
     )
-    # print(f'{train_df}\ntraining df now above')
+    print(f'{train_df}\n[INFO] training df now above')
 
     counts = train_df["label"].value_counts()
     print("[INFO] Now using the following train data with 0 (Negative) and 1 (Positive)")
     print(counts)
 
-    dev_evidences = pair_with_wiki_sentences_eval(mapping, pd.DataFrame(DEV_GT))
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    dev_evidences = pair_with_wiki_sentences_eval(
+        args,
+        mapping, 
+        pd.DataFrame(DEV_GT)
+    )
+    print(f'{dev_evidences}\n[INFO] Dev df now above')
     
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     train_dataset = SentRetrievalBERTDataset(
         train_df, 
         tokenizer=tokenizer,
@@ -487,8 +539,15 @@ def main(args):
     model.to(device)
     optimizer = AdamW(model.parameters(), lr=LR)
     num_training_steps = NUM_EPOCHS * len(train_dataloader)
+    
+    # TODO: transformers.get_linear_schedule_with_warmup
     warmup_steps = (int)(num_training_steps/100)
-    lr_scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: min(epoch / warmup_steps, 1.0))
+    lr_scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=warmup_steps,
+        num_training_steps=num_training_steps
+    )
+    # LinearLR(self.opt, start_factor=0.5, total_iters=4) 
 
     # Step 3. Start training
     if args.do_train == 1:
@@ -529,8 +588,8 @@ def main(args):
                 if current_steps % VALIDATION_STEP == 0 and current_steps > 0:
                     print("[INFO] Training: Start validation")
                     probs = get_predicted_probs(model, eval_dataloader, device)
-
                     val_results = evaluate_retrieval(
+                        args,
                         probs=probs,
                         df_evidences=dev_evidences,
                         ground_truths=DEV_GT,
@@ -538,7 +597,7 @@ def main(args):
                     )
                     with open(LOG_FILE, "a") as log_out:
                         log_out.write(f'{current_steps}: {val_results}\n')
-
+                    print(f'{current_steps}: {val_results}\n')
                     # log each metric separately to TensorBoard
                     for metric_name, metric_value in val_results.items():
                         writer.add_scalar(
@@ -548,23 +607,25 @@ def main(args):
                         )
                     save_checkpoint(model, CKPT_DIR, current_steps)
             # reload negtive part
-            train_df = pair_with_wiki_sentences(
-                mapping,
-                pd.DataFrame(TRAIN_GT),
-                NEGATIVE_RATIO,
-            )
-            print(train_df)
-            print(f'training df now above')
-            train_dataset = SentRetrievalBERTDataset(
-                train_df, 
-                tokenizer=tokenizer,
-                max_length=MAX_SEQ_LEN,
-            )
-            train_dataloader = DataLoader(
-                train_dataset,
-                shuffle=True,
-                batch_size=TRAIN_BATCH_SIZE,
-            )
+            if args.do_dynamic_load_neg == 1:
+                train_df = pair_with_wiki_sentences(
+                    args,
+                    mapping,
+                    pd.DataFrame(TRAIN_GT),
+                    NEGATIVE_RATIO,
+                )
+                print(train_df)
+                print(f'training df now above')
+                train_dataset = SentRetrievalBERTDataset(
+                    train_df, 
+                    tokenizer=tokenizer,
+                    max_length=MAX_SEQ_LEN,
+                )
+                train_dataloader = DataLoader(
+                    train_dataset,
+                    shuffle=True,
+                    batch_size=TRAIN_BATCH_SIZE,
+                )
         print("[INFO] Finished training!")
 
     ckpt_name = args.model_ckpt
@@ -575,6 +636,7 @@ def main(args):
         print("[INFO] Start final evaluations and write prediction files.")
 
         train_evidences = pair_with_wiki_sentences_eval(
+            args,
             mapping=mapping,
             df=pd.DataFrame(TRAIN_GT),
         )
@@ -588,6 +650,7 @@ def main(args):
         print("[INFO] Start validation")
         probs = get_predicted_probs(model, eval_dataloader, device)
         val_results = evaluate_retrieval(
+            args,
             probs=probs,
             df_evidences=dev_evidences,
             ground_truths=DEV_GT,
@@ -600,6 +663,7 @@ def main(args):
         print("[INFO] Start calculating training scores")
         probs = get_predicted_probs(model, train_dataloader, device)
         train_results = evaluate_retrieval(
+            args,
             probs=probs,
             df_evidences=train_evidences,
             ground_truths=TRAIN_GT,
@@ -615,6 +679,7 @@ def main(args):
         test_data = load_json(args.test_doc_data)
 
         test_evidences = pair_with_wiki_sentences_eval(
+            args,
             mapping,
             pd.DataFrame(test_data),
             is_testset=True,
@@ -629,6 +694,7 @@ def main(args):
         print("[INFO] Start predicting the test data")
         probs = get_predicted_probs(model, test_dataloader, device)
         evaluate_retrieval(
+            args,
             probs=probs,
             df_evidences=test_evidences,
             ground_truths=test_data,
@@ -747,6 +813,30 @@ def parse_args() -> Namespace:
         default=1
     )
     parser.add_argument(
+        "--do_t2s",
+        type = int,
+        help="whether to train on simplified chinese downstream",
+        default=1
+    )
+    parser.add_argument(
+        "--do_dynamic_load_neg",
+        type = int,
+        help="whether to reload neg data when training",
+        default=1
+    )
+    parser.add_argument(
+        "--do_single_evi_train",
+        type = int,
+        help="whether to concat single evi when training",
+        default=1
+    )
+    parser.add_argument(
+        "--do_concat_page_name_train",
+        type = int,
+        help="whether to concat page name in front of evi when training",
+        default=1
+    )
+    parser.add_argument(
         "--test_size",
         type=float,
         default=0.2,
@@ -768,6 +858,7 @@ def parse_args() -> Namespace:
         help="gradient accumulation steps",
         default=32
     )
+
     args = parser.parse_args()
     return args
 
