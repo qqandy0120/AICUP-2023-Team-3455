@@ -36,8 +36,14 @@ from collections import Counter
 import opencc
 import os 
 
-pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
+pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=4)
+
 wikipedia.set_lang("zh")
+print('[INFO] Preloading wiki database...')
+wiki_pages = jsonl_dir_to_df("data/wiki-pages")
+wiki_mapping = generate_evidence_to_wiki_pages_mapping(wiki_pages,)
+del wiki_pages
+print('[INFO] Finish preloading wiki database!')
 
 TRAIN_DATA = load_json("data/all_train_data.jsonl")
 TEST_DATA = load_json("data/all_test_data.jsonl")
@@ -147,15 +153,13 @@ def save_doc(
     mode: str = "train",
     num_pred_doc: int = 5,
 ) -> None:
-    with open( f"data/all_{mode}_doc{num_pred_doc}.jsonl", "w", encoding="utf8",) as f:
+    with open( f"data/all_{mode}_doc_select_all.jsonl", "w", encoding="utf8",) as f:
         for i, d in enumerate(data):
             d["predicted_pages"] = list(predictions.iloc[i])
             f.write(json.dumps(d, ensure_ascii=False) + "\n")
 
 def get_pred_pages(
     series_data: pd.Series, 
-    wiki_mapping,
-    mode: str = "train",
     ) -> Set[Dict[int, str]]:
     results = []
     tmp_muji = []
@@ -220,43 +224,31 @@ def get_pred_pages(
                         results.append(term)
                         mapping[term] = claim.find(new_term)
                         tmp_muji.append(new_term)
-    
-    # print(results)  ## select all
-    
-    instance = {
-        'id': series_data['id'],
-    }
-    if mode == 'train':
-        instance.update({'label' : series_data['label']})
-    instance.update({'claim': series_data['claim']})
-    instance.update({"predicted_pages": results})
-
-    with open( f"data/all_{mode}_doc_select_all.jsonl", "a", encoding="utf8",) as f:
-        f.write(json.dumps(instance, ensure_ascii=False) + "\n")
-            
-    final_results = results
-    topk = 10
-    if len(final_results) > topk:
-        assert -1 not in mapping.values()
-        results = sorted(mapping, key=mapping.get)[:topk] 
-    elif len(final_results) < 1:
-        results = first_wiki_term
-
-    instance['predicted_pages'] = results
-    with open( f"data/all_{mode}_doc_{topk}.jsonl", "a", encoding="utf8",) as f:
-        f.write(json.dumps(instance, ensure_ascii=False) + "\n")
-
-    return set(results)
+    # print(mapping)
+    ## select all
+    results = sorted(mapping, key=mapping.get)
+    return results
+    # print(results)  
+    # instance = {
+    #     'id': series_data['id'],
+    # }
+    # if mode == 'train':
+    #     instance.update({'label' : series_data['label']})
+    # instance.update({'claim': series_data['claim']})
+    # instance.update({"predicted_pages": results})
+    # with open( f"data/all_{mode}_doc_select_all.jsonl", "a", encoding="utf8",) as f:
+    #     f.write(json.dumps(instance, ensure_ascii=False) + "\n")
+    # topk = 10
+    # if len(final_results) > topk:
+    #     assert -1 not in mapping.values()
+    #     results = sorted(mapping, key=mapping.get)[:topk] 
+    # elif len(final_results) < 1:
+    #     results = first_wiki_term
+    # instance['predicted_pages'] = results
+    # with open( f"data/all_{mode}_doc_{topk}.jsonl", "a", encoding="utf8",) as f:
+    #     f.write(json.dumps(instance, ensure_ascii=False) + "\n")
 
 if __name__ == "__main__":
-
-    print('[INFO] Preloading wiki database...')
-    wiki_pages = jsonl_dir_to_df("data/wiki-pages")
-    wiki_mapping = generate_evidence_to_wiki_pages_mapping(wiki_pages,)
-    del wiki_pages
-    print('[INFO] Finish preloading wiki database!')
-
-    # Step 1. Get noun phrases from hanlp consituency parsing tree
     ## set up HanLP predictor
     predictor = (hanlp.pipeline().append(
     hanlp.load("FINE_ELECTRA_SMALL_ZH"),
@@ -266,7 +258,10 @@ if __name__ == "__main__":
         output_key="con",
         input_key="tok",
     ))
+    print(f'train data len = {len(TRAIN_DATA)}')
+    print(f'test data len = {len(TEST_DATA)}')
 
+    # Step 1. Get noun phrases from hanlp consituency parsing tree
     ## create parsing tree
     hanlp_results = []
     hanlp_file = f"data/hanlp_con_results.pkl"
@@ -275,7 +270,7 @@ if __name__ == "__main__":
         with open(hanlp_file, "rb") as f:
             hanlp_results = pickle.load(f)
     else:
-        for d in tqdm(TRAIN_DATA, total=11620):
+        for d in tqdm(TRAIN_DATA, total=len(TRAIN_DATA)):
             hanlp_results.append(get_nps_hanlp(predictor, d))
         print(f'[INFO] creating {hanlp_file}')
         with open(hanlp_file, "wb") as f:
@@ -287,14 +282,8 @@ if __name__ == "__main__":
         
     train_df = pd.DataFrame(TRAIN_DATA)  # TODO: modify train_data
     train_df.loc[:, "hanlp_results"] = hanlp_results
-    predicted_results = train_df.apply( lambda x :
-        get_pred_pages(x, wiki_mapping = wiki_mapping, mode="train"), axis=1
-    )
+    predicted_results = train_df.parallel_apply(get_pred_pages, axis = 1)
     save_doc(TRAIN_DATA, predicted_results, mode="train")
-    # Step 2. Calculate our results
-    calculate_precision(TRAIN_DATA, predicted_results)
-    calculate_recall(TRAIN_DATA, predicted_results)
-
     # Step3. Repeat the some processs on test set
     ## create parsing tree
     hanlp_results = []
@@ -305,13 +294,16 @@ if __name__ == "__main__":
             hanlp_results = pickle.load(f)
     else:
         print(f'[INFO] creating {hanlp_test_file}')
-        for d in tqdm(TEST_DATA, total=9038):
+        for d in tqdm(TEST_DATA, total=len(TEST_DATA)):
             hanlp_results.append(get_nps_hanlp(predictor, d))
         with open(hanlp_test_file, "wb") as f:
             pickle.dump(hanlp_results, f)
     
     test_df = pd.DataFrame(TEST_DATA)
     test_df.loc[:, "hanlp_results"] = hanlp_results
-    test_results = test_df.apply( lambda x :
-        get_pred_pages(x, wiki_mapping = wiki_mapping, mode="test"), axis=1
-    )
+    test_results = test_df.parallel_apply(get_pred_pages, axis = 1)
+    save_doc(TEST_DATA, test_results, mode="test")
+
+    # Step 2. Calculate our results
+    # calculate_precision(TRAIN_DATA, predicted_results)
+    # calculate_recall(TRAIN_DATA, predicted_results)
