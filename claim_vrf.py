@@ -65,14 +65,14 @@ def run_evaluation(model: torch.nn.Module, dataloader: DataLoader, device):
     acc = accuracy_score(y_true, y_pred)
     
     # plot cm matrix 
-    cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.title('Confusion Matrix')
-    plt.xlabel('Predicted Labels')
-    plt.ylabel('True Labels')
-    plt.show()
-    plt.savefig(f'cm_{acc}.png')
+    # cm = confusion_matrix(y_true, y_pred)
+    # plt.figure(figsize=(8, 6))
+    # sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    # plt.title('Confusion Matrix')
+    # plt.xlabel('Predicted Labels')
+    # plt.ylabel('True Labels')
+    # plt.show()
+    # plt.savefig(f'cm_{acc}.png')
 
     return {"val_loss": loss / len(dataloader), "val_acc": acc}
 
