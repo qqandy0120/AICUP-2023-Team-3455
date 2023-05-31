@@ -9,7 +9,7 @@ def main(args):
     elif args.option == 1:
         json_to_jsonl(args)
     elif args.option == 2:
-        jsonl_top5(args)
+        jsonl_topk(args)
     elif args.option == 3:
         merge_jsonl_files(args)
 
