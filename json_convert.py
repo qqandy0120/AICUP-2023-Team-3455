@@ -28,13 +28,13 @@ def json_to_jsonl(args):
             json.dump(entry, f_out, ensure_ascii=False)
             f_out.write('\n')
 
-def jsonl_top5(args):
+def jsonl_topk(args):
     with open(args.jsonl_file, "r", encoding='utf-8') as f_in, open(args.output_file, "w", encoding='utf-8') as f_out:
         # read each line of JSONL file and append it to a list
         jsonl_list = [json.loads(line) for line in f_in]
         # write the entire list as a single JSON object to output file
         for i in jsonl_list:
-            i["predicted_evidence"] = i['predicted_evidence'][:5]
+            i["predicted_evidence"] = i['predicted_evidence'][:args.topk]
             json.dump(i, f_out, ensure_ascii=False)
             f_out.write('\n')
 
@@ -72,6 +72,12 @@ def parse_args() -> Namespace:
         type=int,
         help='0: jsonl to json, 1:json to jsonl, 2: jsonl to top5, 3: merge two jsonl files',
         required=True
+    )
+    parser.add_argument(
+        "--topk",
+        type=int,
+        help='convert json with topk predicted pages',
+        default=5
     )
     args = parser.parse_args()
     return args
