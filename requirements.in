@@ -13,3 +13,4 @@ transformers==4.27.1
 wikipedia==1.4.0
 openai
 tiktoken
+seaborn
