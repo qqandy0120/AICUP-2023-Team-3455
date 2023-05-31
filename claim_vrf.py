@@ -31,7 +31,7 @@ from argparse import ArgumentParser, Namespace
 from collections import Counter
 import opencc
 import os 
-pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=4)
+pandarallel.initialize(progress_bar=True, verbose=0, nb_workers=10)
 converter = opencc.OpenCC('t2s.json')  # 't2s.json' for Traditional to Simplified conversion
 
 def same_seeds(seed):
@@ -182,6 +182,7 @@ def main(args):
         "refutes": 1,
         "NOT ENOUGH INFO": 2,
     }
+    # print([INFO] current dir f'{os.listdir(".")}')
     ID2LABEL: Dict[int, str] = {v: k for k, v in LABEL2ID.items()}
     TRAIN_DATA = load_json(args.train_data)
     DEV_DATA = load_json(args.dev_data)
@@ -271,6 +272,12 @@ def main(args):
         num_training_steps=num_training_steps
     )
     if args.do_train == 1:
+        SETTING_FILE = CKPT_DIR + "/setting.sh"
+        SH_FILE = 'train_stc_rtv.sh'
+        ## save the train exp setting
+        print(f'[INFO] saving training exp setting in {SETTING_FILE}')
+        with open(SH_FILE, 'rb') as f_in, open(SETTING_FILE, 'wb') as f_out:
+            f_out.write(f_in.read())
         writer = SummaryWriter(LOG_DIR)
         progress_bar = tqdm(range(num_training_steps))
         current_steps = 0
@@ -383,7 +390,10 @@ def main(args):
         elif args.do_ensemble == 1:
             predict_label_list = []
             predict_dataset = test_df.copy()
-            ckpt_list = sorted(os.listdir(CKPT_DIR), reverse=True)[:args.do_ensemble_topk]
+            ckpt_list = list(os.listdir(CKPT_DIR))
+            ckpt_list.remove('setting.sh')
+            ckpt_list.remove('log.txt')
+            ckpt_list = sorted(ckpt_list, reverse=True)[:args.do_ensemble_topk]
             for ckpt in ckpt_list:
                 print(f'loading {ckpt} to predict\n')
                 model = load_model(model, ckpt, CKPT_DIR)
