@@ -285,7 +285,7 @@ def main(args):
     )
     if args.do_train == 1:
         SETTING_FILE = CKPT_DIR + "/setting.sh"
-        SH_FILE = 'train_stc_rtv.sh'
+        SH_FILE = 'train_claim.sh'
         ## save the train exp setting
         print(f'[INFO] saving training exp setting in {SETTING_FILE}')
         with open(SH_FILE, 'rb') as f_in, open(SETTING_FILE, 'wb') as f_out:
