@@ -8,7 +8,9 @@ from pandarallel import pandarallel
 from tqdm.auto import tqdm
 import random
 import torch
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -61,6 +63,16 @@ def run_evaluation(model: torch.nn.Module, dataloader: DataLoader, device):
             y_pred.extend(torch.argmax(logits, dim=1).tolist())
 
     acc = accuracy_score(y_true, y_pred)
+    
+    # plot cm matrix 
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    plt.show()
+    plt.savefig(f'cm_{acc}.png')
 
     return {"val_loss": loss / len(dataloader), "val_acc": acc}
 
@@ -359,8 +371,32 @@ def main(args):
 
     # Step 4. Make your submission
     if args.do_validate == 1:
+        model = load_model(model, BEST_CKPT, CKPT_DIR)
+        print(f'[INFO] Start final evaluations and write prediction files.')
+        train_df = join_with_topk_evidence(
+            pd.DataFrame(TRAIN_DATA),
+            mapping,
+            mode='eval',
+            topk = EVIDENCE_TOPK
+        )
+        train_dataset = AicupTopkEvidenceBERTDataset(
+            train_df,
+            tokenizer=tokenizer,
+            max_length=MAX_SEQ_LEN,
+        )
+        train_dataloader = DataLoader(train_dataset, batch_size=TEST_BATCH_SIZE)
+        val_results = run_evaluation(model, train_dataloader, device)
+        for metric_name, metric_value in val_results.items():
+            print(f"[INFO] Training score = {metric_name}: {metric_value}")
+        val_results = run_evaluation(model, eval_dataloader, device)
+        for metric_name, metric_value in val_results.items():
+            print(f"[INFO] Dev score = {metric_name}: {metric_value}")
+        
+
+    if args.do_test == 1:
+        print(f'[INFO] load model from {CKPT_DIR}/{BEST_CKPT}')
+        model = load_model(model, BEST_CKPT, CKPT_DIR)
         TEST_DATA = load_json(args.test_data)
-        # TEST_PKL_FILE = Path(args.test_pkl_file)
         print(f'[INFO] load test_df from {TEST_DATA}')
         test_df = join_with_topk_evidence(
             pd.DataFrame(TEST_DATA),
@@ -374,11 +410,9 @@ def main(args):
             max_length=MAX_SEQ_LEN,
         )
         test_dataloader = DataLoader(test_dataset, batch_size=TEST_BATCH_SIZE)
+        
         if args.do_ensemble == 0:
-            # ckpt_name = "val_acc=0.4259_model.750.pt"  #@param {type:"string"}
-            model = load_model(model, BEST_CKPT, CKPT_DIR)
             predicted_label = run_predict(model, test_dataloader, device)
-
             predict_dataset = test_df.copy()
             predict_dataset["predicted_label"] = list(map(ID2LABEL.get, predicted_label))
             predict_dataset[["id", "predicted_label", "predicted_evidence"]].to_json(
@@ -557,13 +591,19 @@ def parse_args() -> Namespace:
         default=5
     )
     parser.add_argument(
-        "-do_validate",
+        "--do_validate",
         type=int,
         help="whether to do validation part",
         default=1
     )
     parser.add_argument(
         "--do_train",
+        type = int,
+        help="whether to do training part",
+        default=1
+    )
+    parser.add_argument(
+        "--do_test",
         type = int,
         help="whether to do training part",
         default=1
