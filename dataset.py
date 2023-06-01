@@ -80,7 +80,7 @@ class AicupTopkEvidenceBERTDataset(BERTDataset):
         # In case there are less than topk evidence sentences
         pad = ["[PAD]"] * (self.topk - len(evidence))
         evidence += pad
-        concat_claim_evidence = " [SEP] ".join([*claim, *evidence])
+        concat_claim_evidence = " [SEP] ".join([claim, *evidence])
 
         concat = self.tokenizer(
             concat_claim_evidence,
