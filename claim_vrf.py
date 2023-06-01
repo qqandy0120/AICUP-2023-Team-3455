@@ -138,14 +138,13 @@ def join_with_topk_evidence(
     if mode == "eval":
         # extract evidence
         df["evidence_list"] = df["predicted_evidence"].apply(lambda x: [
-            mapping.get(evi_id, {}).get(str(evi_idx), "")
+            evi_id + ' ' + mapping.get(evi_id, {}).get(str(evi_idx), "") if args.do_concat_page_name == 1 else mapping.get(evi_id, {}).get(str(evi_idx), "")
             for evi_id, evi_idx in x  # for each evidence list
         ][:topk] if isinstance(x, list) else [])
         df['evidence_list'] = df["evidence_list"].apply(lambda x:
             [converter.convert(sent) for sent in x]
         )
         print(df["evidence_list"][:topk])
-        print( f'\nrunning {mode} mode\n')
     else:
         # extract evidence [DEFAULT CODE]
         # df["evidence_list"] = df["evidence"].parallel_map(lambda x: [
@@ -173,19 +172,19 @@ def join_with_topk_evidence(
         df["evidence_list"] = df.apply(lambda row: (row['evidence_list'] + row['concat_predicted_evidence'])[:topk], axis=1)
         df["evidence_list"] = df["evidence_list"].apply(shuffle_evidence)
         df["evidence_list"] = df["evidence_list"].apply(lambda x: [
-            mapping.get(evi_id, {}).get(str(evi_idx), "")
+            evi_id + ' ' + mapping.get(evi_id, {}).get(str(evi_idx), "") if args.do_concat_page_name == 1 else mapping.get(evi_id, {}).get(str(evi_idx), "")
             for evi_id, evi_idx in x  # for each evidence list
         ] if isinstance(x, list) else [])
-        
         # convert to simplified chinese 
         df['evidence_list'] = df["evidence_list"].apply(lambda x:
             [converter.convert(sent) for sent in x]
-        )
-        # for debug
-        # df['row_length'] = df["evidence_list"].apply(lambda row: len(row)) 
-        # print(df['row_length']) 
+        ) 
         print(df["evidence_list"])
-        print(f'\nrunning {mode} mode\n')
+
+    # for debug
+    df['row_length'] = df["evidence_list"].apply(lambda row: len(row)) 
+    print(df['row_length'])
+    print(f'\nloading dataset {mode} mode\n')
     return df
 
 def main(args):
@@ -332,13 +331,13 @@ def main(args):
                     if best_score < val_results['val_acc']:
                         best_score = val_results['val_acc']
                         #val_acc=0.5453_model.13000.pt \
-                        BEST_CKPT = f"{val_results['val_acc']:.4f}_model.{current_steps}.pt"
-                    validation_scores.append(f"{val_results['val_acc']:.4f}")
+                        BEST_CKPT = f"{val_results['val_acc']:.6f}_model.{current_steps}.pt"
+                    validation_scores.append(f"{val_results['val_acc']:.6f}")
                     save_checkpoint(
                         model,
                         CKPT_DIR,
                         current_steps,
-                        mark=f"{val_results['val_acc']:.4f}",
+                        mark=f"{val_results['val_acc']:.6f}",
                     )
                     # save validate result to log
                     with open(LOG_FILE, "a") as log_out:
@@ -613,6 +612,12 @@ def parse_args() -> Namespace:
         type = int,
         help="whether to do ensemble",
         default=0
+    )
+    parser.add_argument(
+        "--do_concat_page_name",
+        type = int,
+        help="whether to do ensemble",
+        default=1
     )
     parser.add_argument(
         "--do_ensemble_topk",
