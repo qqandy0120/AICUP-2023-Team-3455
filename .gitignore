@@ -1,4 +1,6 @@
 data/
 checkpoints/
-.DS_Store
 cache/
+logs/
+__pycache__/
+.DS_Store
