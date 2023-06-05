@@ -30,7 +30,7 @@ python concat_doc_rtv.py
 ```
 After this step, all_{mode}_doc{n}/es{m}.jsonl will be created, which means the concatenation of top n wiki pages via index-based method and top m wiki pages via elasticsearch(BM-25) method.
 
-## TO check the precision/recall for each combination
+## To check the precision/recall for each combination
 ```bash
 python get_pr.py
 ```
