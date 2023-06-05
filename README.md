@@ -28,4 +28,4 @@ If you successfully produce all_es_train_token_10.txt and all_es_test_token_10.t
 ```bash
 python concat_doc_rtv.py
 ```
-After this step, all_{mode}_doc{n}/es{m}.jsonl will be created, which mean the concatenation of top n wiki pages via index-based method and top m wiki pages via elasticsearch(BM-25) method.
+After this step, all_{mode}_doc{n}/es{m}.jsonl will be created, which means the concatenation of top n wiki pages via index-based method and top m wiki pages via elasticsearch(BM-25) method.
