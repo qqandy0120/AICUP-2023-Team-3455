@@ -4,3 +4,6 @@ cache/
 logs/
 __pycache__/
 .DS_Store
+pr_results.json
+ranked_by_r_results.json
+strong_pre_results.json

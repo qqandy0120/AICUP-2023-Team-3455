@@ -100,6 +100,3 @@ for doc_n in range(MIN_DOCN, MAX_DOCN+1):
 
 with open('pr_results.json', 'w') as f:
     json.dump(result, f, indent=2)
-strong_results = dict(sorted(strong_results.items(), key=lambda x: x[1]['recall'], reverse=True))
-with open('strong_pr_results.json', 'w') as f:
-    json.dump(strong_results, f, indent=2)
