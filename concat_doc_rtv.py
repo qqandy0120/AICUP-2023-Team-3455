@@ -49,7 +49,7 @@ for mode in MODES:
             for i in range(len(select_tokens)):
                 concat_tokens.append(list(set(select_tokens[i][:doc_n]+es_tokens[i][:es_n])))
 
-            out_dir = Path(f'cache/all_{mode}_doc{doc_n}')
+            out_dir = Path(f'data/all/all_{mode}_doc{doc_n}')
             out_dir.mkdir(parents=True, exist_ok=True) 
 
             result = copy.deepcopy(datas)
