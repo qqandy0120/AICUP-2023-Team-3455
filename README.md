@@ -22,7 +22,7 @@ For the files generated from this subtask, we've enclosed them in [data](data), 
 - data/all_train_doc_select_all.jsonl"
 - data/all_test_doc_select_all.jsonl"
 
-exist and jump to [[Subtask 2] Sentence Retreival](#L56)
+exist and jump to [[Subtask 2] Sentence Retreival](#SR)
 ### [Step 1] Built up elasticsearch
 check [search/main](search/main.ipynb), the ipynb have step by step tutorial. <br>
 If you successfully generate:
@@ -53,7 +53,7 @@ python get_pr.py
 ```
 pr_results.json will be created, you can check the result there.
 
-## [Subtask 2] Sentence Retreival
+## <div id="SR">[Subtask 2] Sentence Retreival</div>
 ### [Step 1]
 ### [Step 2]
 ### [Step 3]
