@@ -22,7 +22,7 @@ For the files generated from this subtask, we've enclosed them in [data](data), 
 - data/all_train_doc_select_all.jsonl"
 - data/all_test_doc_select_all.jsonl"
 
-exist and jump to [[Subtask 2] Sentence Retreival](https://github.com/qqandy0120/AICUP-2023-Team-3455#subtask-2-sentence-retreival)
+exist and jump to [[Subtask 2] Sentence Retreival](#SR)
 ### [Step 1] Built up elasticsearch
 check [search/main](search/main.ipynb), the ipynb have step by step tutorial. <br>
 If you successfully generate:
@@ -57,7 +57,7 @@ pr_results.json will be created, you can check the result there.
 ### [Step 1]
 ### [Step 2]
 ### [Step 3]
-## [Subtask 2] Sentence Retreival
+## [Subtask 3] Claim Verification
 ### [Step 1]
 ### [Step 2]
 ### [Step 3]
