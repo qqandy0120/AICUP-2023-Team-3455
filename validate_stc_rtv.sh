@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES="1" python3 stc_rtv.py \
+python stc_rtv.py \
 --train_data data/all_train_data.jsonl \
 --test_data data/all_test_data.jsonl \
 --train_doc_data data/all/all_train_doc9/es9.jsonl \
