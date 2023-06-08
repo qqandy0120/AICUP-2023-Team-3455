@@ -25,8 +25,11 @@ For the files generated from this subtask, we've enclosed them in [data](data), 
 - `data/all_train_doc_select_all.jsonl`
 - `data/all_test_doc_select_all.jsonl`
 - `data/all/all_{mode}_doc{n}/es{m}.jsonl` <-----see [Subtask 1 Step 3]
-
-all files above exist. If so, please jump to [[Subtask 2] Sentence Retreival](#SR)
+all files above exist. If so, please jump to [[Subtask 2] 
+Sentence Retreival](#SR)
+#### Download data method: 
+Browser download: [data/](https://drive.google.com/drive/folders/1PgU4oYxrV5bAliosHQzcvB_EHoNfBr96?usp=sharing)
+gdown: `gdown --folder 1PgU4oYxrV5bAliosHQzcvB_EHoNfBr96`
 ### [Step 1] Built up elasticsearch
 check [search/main](search/main.ipynb), the ipynb have step by step tutorial. <br>
 If you successfully generate:
@@ -58,16 +61,17 @@ python get_pr.py
 `pr_results.json` will be created, you can check the precision and recall result there.
 
 ## <div id="SR">[Subtask 2] Sentence Retreival</div>
+For this section, we use our best result as the example of all command.
 ### Input files
 - `all_train_data.jsonl`
 - `all_test_data.jsonl`
 - `all_train_doc9/es9.jsonl` 
 - `all_test_doc9/es9.jsonl` 
-### Sctipts
+### Scripts
 - `train_stc_rtv.sh`: Script for Sentence Retreival training
 - `validate_stc_rtv.sh`: Script for Sentence Retreival  validation
 - `test_stc_rtv.sh`: Script for Sentence Retreival test
-### `stc_rtv.py` args
+### `stc_rtv.py` args (included in Scripts)
 - `exp_name`: experiment name of the setting
 - `train_data`: path to all public train data
 - `train_doc_data`: Path to public train with predicted pages file from document retrieval 
@@ -91,39 +95,111 @@ python get_pr.py
 - `do_concat_page_name_train`: whether to concat page name in front of evi when training.
 - `test_size`: how much ratio to split Dev data from all.
 - `freeze_ratio`: how much ratio to freeze the model weight.
-- `max_seq_len`: maximum sequence len feed in to the BERT.
+- `max_seq_len`: maximum sequence length feed in model.
 - `accumulation_step`: gradient accumulation steps
 ### [Step 1] Train
-To reproduce training checkpoints, run the following code. Or paste it to `train_stc_rtv.sh` and run the script as well. Set on the `do_train` varible to run training.
+To reproduce training checkpoints, Run default code with the following command.
 ```bash
 bash train_stc_rtv.sh
 ```
+#### Output
+Several ckpt files will be dump in `checkpoints/sent_retrieval/{exp_name}/` directory.
 #### ckpt information
-- **Target file position [Required to reproduce]** : `checkpoints/sent_retrieval/all_data_len256_lr7_7_top5/model.60000.pt`
-- Download: 
+- **Target ckpt file position [Required to reproduce]** : `checkpoints/sent_retrieval/all_data_len256_lr7_7_top5/model.60000.pt`
+#### Ckpt Download: 
 We provide two way to reproduce, in case of `gdown` may not work. You should check or create the directory or path on you own if you download ckpt file directly from browser here.
 
 | Ways to download | link or command|
 | -------- | -------- |
-| Browser | [all_data_len256_lr7_7_top5/](https://drive.google.com/drive/folders/1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m?usp=sharing) or  [model.60000.pt](https://drive.google.com/file/d/1M8ziae70YJJ8l7jJKTvCz7EEIELD-vwk/view?usp=sharing) | 
+| Browser download | [all_data_len256_lr7_7_top5/](https://drive.google.com/drive/folders/1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m?usp=sharing) or  [model.60000.pt](https://drive.google.com/file/d/1M8ziae70YJJ8l7jJKTvCz7EEIELD-vwk/view?usp=sharing) | 
 |`gdown`    |`gdown --folder 1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m` |
 
-### [Step 2] Validation
-Run the following code or paste it to `train_stc_rtv.sh` and run the script as well. We could get training score of train data and validation score of dev data. Also, output files will be use on Subtask 3 training:
-- `data/all_data_len256_lr7_7_top5/train_{model_ckpt}_{top_n}.jsonl`
-- `data/all_data_len256_lr7_7_top5/dev_{model_ckpt}_{top_n}.jsonl`
+### [Step 2] Validate
+Run default code with the following command to get the Top k (default set to 10) predicted evidences about train and dev data. We could get training score about train data and validation score about dev data to the model we choose.
 
 ```bash
 bash validate_stc_rtv.sh
 ```
+#### Output
+Output files about train and dev will be use on Subtask 3 training:
+- `data/all_data_len256_lr7_7_top5/train_{model_ckpt}_{top_n}.jsonl`
+- `data/all_data_len256_lr7_7_top5/dev_{model_ckpt}_{top_n}.jsonl`
 ### [Step 3] Test
-Run the following code or paste it to `test_stc_rtv.sh` and run the script as well. We could get model inference result. We set on the `do_test` varible to run test. Also, output files will be use on Subtask 3 test section:
-- `data/all_data_len256_lr7_7_top5/test_{model_ckpt}_{top_n}.jsonl`
+Run default code with the following command. We could get model inference result.
 
 ```bash
 bash test_stc_rtv.sh
 ```
+#### Output
+Output files about test will be use on Subtask 3 testing:
+- `data/all_data_len256_lr7_7_top5/test_{model_ckpt}_{top_n}.jsonl`
 ## [Subtask 3] Claim Verification
-### [Step 1]
-### [Step 2]
-### [Step 3]
+For this section, we use our best result as the example of all command. However, the best result is the ensemble of three model from two training.
+### Input file (continue example above):
+- `train_model.60000.pt_10.jsonl`: 
+- `dev_model.60000.pt_10.jsonl`
+- `test_model.60000.pt_5.jsonl`
+### Scripts
+- `train_claim.sh`: Script for Claim Verification training
+- `validate_claim.sh`: Script for Claim Verification  validation
+- `test_claim.sh`: Script for Claim Verification test
+### `claim_vrf.py` args (included in Scripts)
+- `train_data`: Path to top k predicted sentences training data from [subtasks 2] output
+- `dev_data`: Path to top k predicted sentences development data from [subtasks 2] output
+- `test_data`: Path to top k predicted sentences testing data from [subtasks 2] output
+- `output_file`: Path to submission file.
+- `model_name`: Pretrained model name
+- `ckpt_name`: checkpoint file name, ***not path**
+- `exp_name`: experiment name of the setting
+- `num_epoch`: Training total epoch
+- `save_checkpoints_limit`: how many Top N checkpoints you would like to save
+- `accumulation_step`: gradient accumulation step
+- `lr`: Training learning rate
+- `train_batch_size`: batch size for training
+- `test_batch_size`: batch size for testing
+- `validation_step`: how many steps you would like to validate when training
+- `seed`: random seed
+- `max_seq_len`: maximum sequence length feed in model,
+- `top_n`: use Top N sentence from model for training
+- `do_train`: whether to do training, 1 for yes, 0 for no.
+- `do_validate`: whether to do validation, 1 for yes, 0 for no.
+- `do_test`: whether to do testing, 1 for yes, 0 for no.
+- `do_ensemble`: whether to do ensemble, 1 for yes, 0 for no.
+- `do_concat_page_name`: whether to concat page name when training **and** testing ensemble, 1 for yes, 0 for no.
+- `do_ensemble_topk`: use Top K checkpoints to ensemble.
+### [Step 1] Train
+To reproduce training checkpoints, run default code with the following command.
+```bash
+bash train_claim.sh
+```
+#### Output
+Several ckpt files will be dump in `checkpoints/claim_verification/{exp_name}/` directory.
+#### Ckpt information
+- **Target ckpt file position [Required to reproduce]** : 
+Three models would included in `fix_claim_concat_pgname_ensemble_e125_bs8_3.73e-05_top5_hfl/chinese-macbert-large/` 
+    - `0.808354_model.58000.pt`
+    - `0.803440_model.69000.pt`
+    - `0.800983_model.64000.pt`
+#### Ckpt Download: 
+We provide two way to reproduce, in case of `gdown` may not work. You should check or create the directory or path on you own if you download ckpt file directly from browser here.
+
+| Ways to download | link or command|
+| -------- | -------- |
+| Browser download | [fix_claim_concat_pgname_ensemble_e125_bs8_3.73e-05_top5_hfl/](https://drive.google.com/drive/folders/1Ak-QpzIeMSNAO-jrCcAYRKkSfDpNcUv1?usp=sharing) | 
+|`gdown`    |`gdown --folder 1Ak-QpzIeMSNAO-jrCcAYRKkSfDpNcUv1` |
+
+### [Step 2] Validate
+Run default code with the following command to get get training score about train data and validation score about dev data to the model ckpt we choose.
+
+```bash
+bash validate_claim.sh
+```
+### [Step 3] Test
+Run default code with the following command. We could get model inference result, the final submission.
+
+```bash
+bash test_claim.sh
+```
+#### Output
+- `submission.jsonl`
+
