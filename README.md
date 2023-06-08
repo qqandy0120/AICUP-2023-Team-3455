@@ -15,14 +15,15 @@ pip install -r requirements.in
 ```bash
 bash download.sh
 ```
-## [Subtask 1]Document Retreival
-For the files generated from this subtask, we've enclosed them in [data](data), so you can simple check whether
+## [Subtask 1] Document Retreival
+For the files generated from this subtask, we've enclosed them in [data](data), so you can simply check whether
 - data/all_es_train_token_10.txt
 - data/all_es_test_token_10.txt
 - data/all_train_doc_select_all.jsonl"
 - data/all_test_doc_select_all.jsonl"
+- data/all/all_{mode}_doc{n}/es{m}.jsonl <-----see [Subtask 1 Step 3]
 
-exist and jump to [[Subtask 2] Sentence Retreival](#SR)
+all files above exist. If so, please jump to [[Subtask 2] Sentence Retreival](#SR)
 ### [Step 1] Built up elasticsearch
 check [search/main](search/main.ipynb), the ipynb have step by step tutorial. <br>
 If you successfully generate:
@@ -45,7 +46,7 @@ then you have done this step.
 ```bash
 python concat_doc_rtv.py
 ```
-After this step, all_{mode}_doc{n}/es{m}.jsonl will be created, which means the concatenation of top n wiki pages via index-based method and top m wiki pages via elasticsearch(BM-25) method.
+After this step, `all_{mode}_doc{n}/es{m}.jsonl` will be created, which means the concatenation of Top $n$ wiki pages via index-based method and Top $m$ wiki pages via elasticsearch (BM-25) method, where $0\leq n, m\leq9$, mode = 'train' or 'test'.
 
 ### [Step 4] Check the precision/recall for each combination
 ```bash
