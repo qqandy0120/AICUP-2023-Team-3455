@@ -27,8 +27,8 @@ For the files generated from this subtask, we've enclosed them in [data](data), 
 - `data/all_es_test_token_10.txt`
 - `data/all_train_doc_select_all.jsonl`
 - `data/all_test_doc_select_all.jsonl`
-- `data/all/all_{mode}_doc{n}/es{m}.jsonl` <-----see [Subtask 1 Step 3]
-all files above exist. If so, please jump to [[Subtask 2] 
+- `data/all/all_{mode}_doc{n}/es{m}.jsonl` <-----see [Subtask 1 Step 3] </br>
+If all files above exist. Please jump to [[Subtask 2] 
 Sentence Retreival](#SR)
 #### Download data method: 
 Browser download: [data/](https://drive.google.com/drive/folders/1PgU4oYxrV5bAliosHQzcvB_EHoNfBr96?usp=sharing)
