@@ -5,9 +5,10 @@ python stc_rtv.py \
 --test_doc_data data/all/all_test_doc9/es9.jsonl \
 --exp_name all_data_len256_lr7_7_top5 \
 --model_name hfl/chinese-macbert-large \
+--model_ckpt model.60000.pt \
 --num_epoch 30 \
 --train_batch_size 10 \
---test_batch_size 10 \
+--test_batch_size 32 \
 --validation_step 2000 \
 --top_n 5 \
 --neg_ratio 0.1 \
