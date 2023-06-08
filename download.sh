@@ -1,11 +1,11 @@
 # download merge train and test data
 gdown --folder 1ar3poxygTdnm2Q7uJp0WEp0ydBw7fAak
-v aicup_final_data/* ./
+mv aicup_final_data/* ./
 rm -r aicup_final_data/
 unzip data/all.zip
 mv all/ data/
 rm -f data/all.zip
-
+rm -rf __MACOSX/
 # download official wiki pages
 gdown --folder 1kop6Pkva0oORDU9BFpmN_UOiXCLCAe0c
 mv wiki-pages/ data/
