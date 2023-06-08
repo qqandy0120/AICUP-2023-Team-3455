@@ -11,7 +11,9 @@ conda activate aicup
 pip install -r requirements.in
 ```
 
-## Download Data
+## Download all Data and ckpt
+**Here will download a zip file. All file required when reproduce is in it!**
+There are also seperate download link below for each task.
 ```bash
 bash download.sh
 ```
@@ -92,6 +94,7 @@ For this section, we use our best result as the example of all command.
 - `do_test`: whether to do testing, 1 for yes, 0 for no.
 - `do_dynamic_load_neg`: whether to do dynamic load neg dataset, 1 for yes, 0 for no.
 - `do_single_evi_train`: whether to concat single evi when training.
+- `do_t2s`: whether to convert traditional Chinese to simplified Chinese
 - `do_concat_page_name_train`: whether to concat page name in front of evi when training.
 - `test_size`: how much ratio to split Dev data from all.
 - `freeze_ratio`: how much ratio to freeze the model weight.
@@ -168,7 +171,7 @@ For this section, we use our best result as the example of all command. However,
 - `do_concat_page_name`: whether to concat page name when training **and** testing ensemble, 1 for yes, 0 for no.
 - `do_ensemble_topk`: use Top K checkpoints to ensemble.
 ### [Step 1] Train
-To reproduce training checkpoints, run default code with the following command. There are two settings to reproduce the all ensemble files.
+To reproduce training checkpoints, run default code with the following command. The default code reproduce for `0.808354_model.58000.pt` and `0.800983_model.64000.pt`
 ```bash
 bash train_claim.sh
 ```
@@ -202,8 +205,15 @@ bash test_claim.sh
 ```
 #### Output
 - `submission.jsonl`
-
-## Result
+## Other helper program
+- `json_convert.py`:
+    - turn json to jsonl
+    - turn jsonl to json
+    - Merge 2 jsonl file
+    - truncate jsonl to Top K evidence
+- `json_voting.py`: If we have lots of submission, we could use this program to ensemble all models' output label by voting.
+## Other checkpoint
+## Final Result
 **Public Leaderboard score = 0.658241** </br>
 **Private Leaderboard score = 0.75041** </br>
 **Rank 1** </br>
