@@ -213,7 +213,11 @@ bash test_claim.sh
     - Merge 2 jsonl file
     - truncate jsonl to Top K evidence
 - `json_voting.py`: If we have lots of submission, we could use this program to ensemble all models' output label by voting.
+
 ## Other checkpoint
+Some checkpoint and setting are here, welcome to try!
+[other checkpoint](https://drive.google.com/drive/folders/1zRLhMWU09sDyYZGbJhBj6K8EL1Evoqod?usp=sharing)
+
 ## Final Result
 **Public Leaderboard score = 0.658241** </br>
 **Private Leaderboard score = 0.75041** </br>
