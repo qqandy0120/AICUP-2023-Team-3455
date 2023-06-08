@@ -219,3 +219,8 @@ bash test_claim.sh
 **Private Leaderboard score = 0.75041** </br>
 **Rank 1** </br>
 
+## Contact
+簡瑀鋅: yd3214813@gmail.com <br/>
+莊翔安: qqandy0120@gmail.com <br/>
+Feel free to contact us!
+
