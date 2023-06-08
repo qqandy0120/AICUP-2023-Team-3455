@@ -9,7 +9,7 @@ python stc_rtv.py \
 --train_batch_size 10 \
 --test_batch_size 10 \
 --validation_step 2000 \
---top_n 5 \
+--top_n 10 \
 --neg_ratio 0.1 \
 --lr 7.7e-5 \
 --max_seq_len 256 \
