@@ -1,4 +1,4 @@
-python3 stc_rtv.py \
+CUDA_VISIBLE_DEVICES="1" python3 stc_rtv.py \
 --train_data data/all_train_data.jsonl \
 --test_data data/all_test_data.jsonl \
 --train_doc_data data/all/all_train_doc9/es9.jsonl \
@@ -18,7 +18,6 @@ python3 stc_rtv.py \
 --do_dynamic_load_neg 1 \
 --do_single_evi_train 1 \
 --do_concat_page_name_train 1 \
---do_train 1 \
+--do_train 0 \
 --do_test 0 \
---do_validate 0 \
-
+--do_validate 1 \
