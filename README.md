@@ -144,7 +144,7 @@ Output files about test will be use on Subtask 3 testing:
 For this section, we use our best result as the example of all command. However, the best result is the ensemble of three model from two training.
 ### Input file (continue example above):
 - `train_model.60000.pt_10.jsonl`: 
-- `dev_model.60000.pt_10.jsonl`
+- `dev_model.60000.pt_10.jsonl` <-- you could you helper function `json_convert.py` to truncate evidences to Top5!
 - `test_model.60000.pt_5.jsonl`
 ### Scripts
 - `train_claim.sh`: Script for Claim Verification training
