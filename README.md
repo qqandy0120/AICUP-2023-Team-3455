@@ -1,5 +1,5 @@
 # AI CUP Team 3455
-
+![PDF](poster.png)
 ## [Optional] Create Conda Environment
 ```bash
 conda create -n aicup python=3.9
