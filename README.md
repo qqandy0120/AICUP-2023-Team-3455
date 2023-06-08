@@ -168,7 +168,7 @@ For this section, we use our best result as the example of all command. However,
 - `do_concat_page_name`: whether to concat page name when training **and** testing ensemble, 1 for yes, 0 for no.
 - `do_ensemble_topk`: use Top K checkpoints to ensemble.
 ### [Step 1] Train
-To reproduce training checkpoints, run default code with the following command.
+To reproduce training checkpoints, run default code with the following command. There are two settings to reproduce the all ensemble files.
 ```bash
 bash train_claim.sh
 ```
@@ -204,7 +204,7 @@ bash test_claim.sh
 - `submission.jsonl`
 
 ## Result
-**Public Leaderboard score = 0.658241**
-**Private Leaderboard score = 0.75041**
-**Rank 1**
+**Public Leaderboard score = 0.658241** </br>
+**Private Leaderboard score = 0.75041** </br>
+**Rank 1** </br>
 
