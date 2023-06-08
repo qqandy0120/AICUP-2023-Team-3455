@@ -12,8 +12,9 @@ pip install -r requirements.in
 ```
 
 ## Download all Data and ckpt
-**Here will download a zip file. All file required when reproduce is in it!**
-There are also seperate download link below for each task.
+**Here will download a zip file. All file required when reproduce is in it! It for one not reproducing training part.**
+There are also seperate download link below for each task. </br>
+or download by link: [data/ and checkpoints/](https://drive.google.com/file/d/1XFWUIFrkUogNHNCuWvJaz-5Ec1N32UaK/view?usp=drive_link)
 ```bash
 bash download.sh
 ```
