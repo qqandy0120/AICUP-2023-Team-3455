@@ -1,16 +1,6 @@
-# download merge train and test data
-gdown --folder 1ar3poxygTdnm2Q7uJp0WEp0ydBw7fAak
-mv aicup_final_data/* ./
-rm -r aicup_final_data/
-unzip data/all.zip
-mv all/ data/
-rm -f data/all.zip
+gdown 1XFWUIFrkUogNHNCuWvJaz-5Ec1N32UaK
+unzip aicup_reproduce.zip
+rm -f aicup_reproduce.zip
+mv aicup_reproduce/* ./
+rm -rf aicup_reproduce/
 rm -rf __MACOSX/
-# download official wiki pages
-gdown --folder 1kop6Pkva0oORDU9BFpmN_UOiXCLCAe0c
-mv wiki-pages/ data/
-
-# download chpt
-gdown --folder 1h0K5BFSssQAv6NtoyX43GR0Dj36QylB_
-mv aicup_ckpt/* ./
-rm -r aicup_ckpt/
