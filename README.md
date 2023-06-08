@@ -111,7 +111,7 @@ We provide two way to reproduce, in case of `gdown` may not work. You should che
 
 | Ways to download | link or command|
 | -------- | -------- |
-| Browser download | [all_data_len256_lr7_7_top5/](https://drive.google.com/drive/folders/1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m?usp=sharing) or  [model.60000.pt](https://drive.google.com/file/d/1M8ziae70YJJ8l7jJKTvCz7EEIELD-vwk/view?usp=sharing) | 
+| Browser download | [all_data_len256_lr7_7_top5/](https://drive.google.com/drive/folders/1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m?usp=sharing)   **OR**    [model.60000.pt](https://drive.google.com/file/d/1M8ziae70YJJ8l7jJKTvCz7EEIELD-vwk/view?usp=sharing) | 
 |`gdown`    |`gdown --folder 1Uy72mKa9jK6vgIEX7VrBrAxq_K36JA9m` |
 
 ### [Step 2] Validate
@@ -176,13 +176,13 @@ bash train_claim.sh
 Several ckpt files will be dump in `checkpoints/claim_verification/{exp_name}/` directory.
 #### Ckpt information
 - **Target ckpt file position [Required to reproduce]** : 
-Three models would included in `fix_claim_concat_pgname_ensemble_e125_bs8_3.73e-05_top5_hfl/chinese-macbert-large/` 
+If the following models are loaded, Three models would included in `fix_claim_concat_pgname_ensemble_e125_bs8_3.73e-05_top5_hfl/chinese-macbert-large/` 
     - `0.808354_model.58000.pt`
     - `0.803440_model.69000.pt`
     - `0.800983_model.64000.pt`
 #### Ckpt Download: 
 We provide two way to reproduce, in case of `gdown` may not work. You should check or create the directory or path on you own if you download ckpt file directly from browser here.
-
+**If download those models sucessfully, you could jump to [Subtask 3 Step 3] do inference to reproduce.**
 | Ways to download | link or command|
 | -------- | -------- |
 | Browser download | [fix_claim_concat_pgname_ensemble_e125_bs8_3.73e-05_top5_hfl/](https://drive.google.com/drive/folders/1Ak-QpzIeMSNAO-jrCcAYRKkSfDpNcUv1?usp=sharing) | 
@@ -202,4 +202,9 @@ bash test_claim.sh
 ```
 #### Output
 - `submission.jsonl`
+
+## Result
+**Public Leaderboard score = 0.658241**
+**Private Leaderboard score = 0.75041**
+**Rank 1**
 
