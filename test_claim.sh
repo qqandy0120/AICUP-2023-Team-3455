@@ -15,8 +15,8 @@ python claim_vrf.py \
 --lr 3.73e-5 \
 --accumulation_step 32 \
 --do_train 0 \
---do_validate 1 \
---do_test 0 \
+--do_validate 0 \
+--do_test 1 \
 --do_ensemble 1 \
 --do_ensemble_topk 3 \
 --do_concat_page_name 1 \
