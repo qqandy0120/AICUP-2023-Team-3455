@@ -1,6 +1,6 @@
 python claim_vrf.py \
 --train_data data/all_data_len256_lr7_7_top5/train_model.60000.pt_10.jsonl  \
---dev_data data/all_data_len256_lr7_7_top5/dev_model.60000.pt_5.jsonl \
+--dev_data data/all_data_len256_lr7_7_top5/dev_model.60000.pt_10.jsonl \
 --test_data data/all_data_len256_lr7_7_top5/test_model.60000.pt_5.jsonl \
 --output_file submission_0601_macbert_large_fix_claim_sep_concat_pg_name_step3_ensemble_3.jsonl \
 --model_name hfl/chinese-macbert-large \
